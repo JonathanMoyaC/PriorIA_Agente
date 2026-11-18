@@ -1,8 +1,3 @@
-"""Minimal event-driven simulator and policies for the PriorIA box-allocation study.
-
-All values in the demo are synthetic operational assumptions. They are not a
-clinical protocol or a representation of a named hospital.
-"""
 
 from __future__ import annotations
 
