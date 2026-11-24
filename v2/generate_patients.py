@@ -59,7 +59,7 @@ def config_template() -> dict[str, Any]:
             "consultation_boxes": 8,
             "prioria_cabins": 5,
             "general_waiting_chairs": 36,
-            "triage_c2_waiting_chairs": None,
+            "c2_waiting_chairs": 24,
             "resuscitation_beds": 2
         },
         "abandonment": {
