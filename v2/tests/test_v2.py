@@ -27,6 +27,8 @@ class PatientGenerationTests(unittest.TestCase):
         self.assertEqual({f"C{i}": sum(p["triage_category"] == f"C{i}" for p in patients)
                           for i in range(1, 6)},
                          {"C1": 2, "C2": 12, "C3": 36, "C4": 33, "C5": 17})
+        self.assertTrue(all(p["arrival_mode"] == "ambulance" for p in patients
+                            if p["triage_category"] == "C1"))
         expected_adoption = {"adult_young": 0.8, "adult_middle": 0.6, "adult_older": 0.35}
         for patient in patients:
             self.assertAlmostEqual(patient["prioria_adoption_probability"],
@@ -41,6 +43,13 @@ class PatientGenerationTests(unittest.TestCase):
                             50 <= p["systolic_bp"] <= 250 and
                             20 <= p["diastolic_bp"] <= 150
                             for p in patients))
+
+    def test_c1_ambulance_requirement_rejects_infeasible_quotas(self) -> None:
+        config = load_fixture()
+        config["triage_category_probabilities"] = {
+            "C1": 0.12, "C2": 0.02, "C3": 0.36, "C4": 0.33, "C5": 0.17}
+        with self.assertRaisesRegex(ValueError, "pacientes C1"):
+            generate_patients(config)
 
     def test_arrival_curve_expected_peak_is_sixteen(self) -> None:
         patients = generate_patients(load_fixture())
@@ -199,7 +208,7 @@ class EndToEndSimulationTests(unittest.TestCase):
             key: {"thoracic_pain": 1.0} for key in
             ("adult_young", "adult_middle", "adult_older")}
         config["arrival"]["arrival_mode_shares"] = {
-            "own_means": 1.0, "ambulance": 0.0, "police": 0.0}
+            "own_means": 0.0, "ambulance": 1.0, "police": 0.0}
         config["arrival"]["prioria_adoption_rate"] = 0.0
         config["arrival"]["prioria_adoption_adjustment_by_age"] = {
             "adult_young": 0.0, "adult_middle": 0.0, "adult_older": 0.0}
