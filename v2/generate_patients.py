@@ -216,12 +216,28 @@ def abandonment_risk(patient: dict[str, Any], wait_minutes: float,
 
 def constrained_arrival_modes(age_groups: list[str], shares: dict[str, float],
                               preference: dict[str, dict[str, float]],
-                              rng: random.Random) -> list[str]:
-    """Honor global mode totals while favoring the configured age trends."""
+                              rng: random.Random,
+                              required_ambulance_indices: set[int] | None = None) -> list[str]:
+    """Honor global mode totals and required ambulance arrivals."""
     quotas = exact_daily_counts(len(age_groups), shares)
     modes: list[str | None] = [None] * len(age_groups)
     remaining = dict(quotas)
-    order = list(range(len(age_groups)))
+    required = required_ambulance_indices or set()
+    if required and "ambulance" not in remaining:
+        raise ValueError("Hay pacientes que requieren ambulancia, pero la cuota de ambulancia es cero.")
+    ambulance_quota = remaining.get("ambulance", 0)
+    if len(required) > ambulance_quota:
+        raise ValueError(
+            f"Hay {len(required)} pacientes C1 pero solo {ambulance_quota} "
+            "plazas de ambulancia según las cuotas de llegada. Ajusta las "
+            "proporciones de C1 o de ambulancia."
+        )
+    for index in required:
+        if index < 0 or index >= len(age_groups):
+            raise ValueError("Índice de llegada obligatoria fuera del rango de pacientes.")
+        modes[index] = "ambulance"
+        remaining["ambulance"] -= 1
+    order = [index for index in range(len(age_groups)) if index not in required]
     rng.shuffle(order)
     for index in order:
         age = age_groups[index]
@@ -285,7 +301,9 @@ def generate_patients(config: dict[str, Any]) -> list[dict[str, Any]]:
     arrival_cfg = config["arrival"]
     modes = constrained_arrival_modes(
         age_groups, arrival_cfg["arrival_mode_shares"],
-        arrival_cfg["mode_preference_weights_by_age"], rng)
+        arrival_cfg["mode_preference_weights_by_age"], rng,
+        required_ambulance_indices={i for i, category in enumerate(categories)
+                                    if category == "C1"})
     hour_weights = gaussian_hour_weights(
         int(arrival_cfg.get("peak_hour", 16)),
         float(arrival_cfg.get("sigma_hours", 4.0)),
