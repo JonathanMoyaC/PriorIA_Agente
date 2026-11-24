@@ -1,0 +1,11 @@
+replication,seed,generated,discharged,hospitalized,hospitalization_rate,abandoned,abandonment_rate,unresolved,mean_arrival_to_first_consult_minutes,mean_total_wait_minutes,standing_patient_minutes,max_general_waiting_occupancy,max_c2_waiting_occupancy,deis_values_verified
+1,2026112401,100,76,24,0.24,0,0.0,0,8.5,8.11,0,2,8,False
+2,2026112402,100,77,23,0.23,0,0.0,0,12.34,20.35,0,4,9,False
+3,2026112403,100,78,22,0.22,0,0.0,0,10.26,5.46,0,2,7,False
+4,2026112404,100,77,23,0.23,0,0.0,0,7.4,3.47,0,2,4,False
+5,2026112405,100,86,14,0.14,0,0.0,0,8.42,2.51,0,3,3,False
+6,2026112406,100,78,22,0.22,0,0.0,0,9.94,12.53,0,2,7,False
+7,2026112407,100,78,22,0.22,0,0.0,0,9.27,3.92,0,2,5,False
+8,2026112408,100,85,15,0.15,0,0.0,0,7.35,2.31,0,2,4,False
+9,2026112409,100,79,21,0.21,0,0.0,0,10.6,12.8,0,3,9,False
+10,2026112410,100,80,20,0.2,0,0.0,0,8.41,5.03,0,1,6,False
