@@ -82,6 +82,12 @@ class GeneralWaitingRoom:
         entered = self._active[patient_id][1].queue_entered_minute
         return max(0, now_minute - entered)
 
+    def cumulative_waiting_minutes(self, patient_id: str, now_minute: int) -> int:
+        if patient_id not in self._active:
+            raise KeyError(f"Paciente no activo en sala: {patient_id}")
+        patient = self._active[patient_id][1]
+        return patient.prior_wait_minutes + self.waiting_minutes(patient_id, now_minute)
+
     def abandonment_candidates(
         self,
         now_minute: int,
@@ -95,7 +101,7 @@ class GeneralWaitingRoom:
         """
         candidates: list[tuple[int, str, float]] = []
         for sequence, patient in self._active.values():
-            wait = patient.prior_wait_minutes + max(0, now_minute - patient.queue_entered_minute)
+            wait = self.cumulative_waiting_minutes(patient.patient_id, now_minute)
             standing = patient.patient_id not in self._seated
             patient_data = {
                 "triage_category": patient.triage_category,
@@ -213,9 +219,7 @@ class WaitingAreas:
         area = self._patient_rooms.pop(patient_id)
         room = self.c2 if area == "c2" else self.general
         current = self._patient_records[patient_id]
-        accumulated_wait = (
-            current.prior_wait_minutes + room.waiting_minutes(patient_id, now_minute)
-        )
+        accumulated_wait = room.cumulative_waiting_minutes(patient_id, now_minute)
         self._patient_records[patient_id] = WaitingPatient(
             patient_id=current.patient_id,
             queue_entered_minute=current.queue_entered_minute,
