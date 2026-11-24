@@ -30,9 +30,10 @@ a boxes.
   dura 30–120 min por sorteo uniforme, sin retener a esa enfermera. El paciente
   conserva su silla durante ambas etapas y, al terminar, espera allí la
   reevaluación médica.
-- Un paciente C1 en reanimación requiere una enfermera de atención. Si no hay
-  ninguna disponible, se usa una enfermera de triage como último recurso; esa
-  enfermera queda ocupada hasta que termina la atención C1.
+- Al ingresar un paciente C1 a reanimación se le asigna de inmediato una
+  enfermera de atención disponible. Si todas están ocupadas, se usa una
+  enfermera de triage como último recurso. La enfermera queda ocupada hasta que
+  termina la atención C1; si también están ocupadas, el C1 espera esa asignación.
 - Una reevaluación favorable da el alta. Si falla, se indica otro tratamiento;
   al segundo fallo, el paciente se hospitaliza.
 - La ecuación de abandono se evalúa cada minuto mientras el paciente espera. Usa
