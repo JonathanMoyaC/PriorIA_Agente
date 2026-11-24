@@ -13,6 +13,9 @@ a boxes.
 - Tras admisión, los pacientes esperan en la sala general para PriorIA o triage
   humano y ocupan una silla FIFO si hay disponibilidad. Al ser llamados a
   categorización, liberan la silla.
+- Las enfermeras/os de triage son un recurso parametrizable compartido por la
+  validación de PriorIA (1–5 min) y la categorización humana (10–15 min). Los
+  intervalos se sortean uniformemente y pueden cambiarse en la configuración.
 - La adopción de PriorIA se calcula como tasa base más un ajuste por edad, acotado
   entre 0 y 1. Solo es elegible la llegada por medios propios y C1 pasa a triage
   humano. La probabilidad base y los ajustes son configurables.
@@ -22,9 +25,14 @@ a boxes.
 - Ser llamado a consulta o reevaluación libera la silla. C4/C5 sin tratamiento
   se dan de alta por la puerta principal.
 - Si se indica tratamiento, el paciente vuelve a la sala C2 y espera una
-  enfermera. El tratamiento dura entre 30 y 120 minutos por sorteo uniforme. La
-  silla sigue ocupada durante el tratamiento; al terminar, el paciente espera
-  allí la reevaluación médica.
+  enfermera de atención. La enfermera realiza el procedimiento asociado durante
+  5–10 min y vuelve disponible a la estación; luego el tratamiento/observación
+  dura 30–120 min por sorteo uniforme, sin retener a esa enfermera. El paciente
+  conserva su silla durante ambas etapas y, al terminar, espera allí la
+  reevaluación médica.
+- Un paciente C1 en reanimación requiere una enfermera de atención. Si no hay
+  ninguna disponible, se usa una enfermera de triage como último recurso; esa
+  enfermera queda ocupada hasta que termina la atención C1.
 - Una reevaluación favorable da el alta. Si falla, se indica otro tratamiento;
   al segundo fallo, el paciente se hospitaliza.
 - La ecuación de abandono se evalúa cada minuto mientras el paciente espera. Usa
@@ -33,8 +41,9 @@ a boxes.
 - Configuración inicial de recursos: 2 puestos de admisión, 5 cabinas PriorIA,
   2 estaciones de triage, 3 enfermeras/os de triage, 12 médicos (4 por
   especialidad), 8 boxes con 8 enfermeras/os, 2 camas de reanimación, 36 sillas
-  generales, 24 sillas C2 y 1 enfermera/o para tratamientos en C2. Lo último es
-  un supuesto configurable a confirmar.
+  generales, 24 sillas C2. Las enfermeras/os de atención corresponden al pool
+  configurable de 8 enfermeras/os asociado a los boxes; triage tiene 3 en el
+  fixture. Estas dotaciones son supuestos configurables.
 
 ## Ejecutar
 
@@ -57,6 +66,5 @@ de edad, categorías, causas, signos vitales, adopción, tratamientos y desenlac
 verificadas o una configuración declarada como fixture de prueba.
 
 La dotación se mantiene constante durante las 24 horas. Las tasas de adopción,
-tratamiento, reevaluación, hospitalización y número de enfermeras disponibles en
-C2 aún requieren datos o decisiones operacionales. El simulador no categoriza ni
-recomienda tratamientos clínicos.
+tratamiento, reevaluación y hospitalización aún requieren datos o decisiones
+operacionales. El simulador no categoriza ni recomienda tratamientos clínicos.
