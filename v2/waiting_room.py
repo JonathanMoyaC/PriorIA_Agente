@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """FIFO chair allocation for PriorIA V2's separate emergency waiting rooms.
 
-C2/C3 patients enter the C2 room; C4/C5 patients enter the general room; C1
+C2 patients enter the C2 room; C3/C4/C5 patients enter the general room; C1
 patients go to resuscitation. Each waiting room has its own chair capacity and
 FIFO queue. PriorIA cabins, boxes, and resuscitation beds are modeled separately.
 """
@@ -20,6 +20,7 @@ class WaitingPatient:
     abandonment_threshold: float
     waiting_stage: str = "initial"
     prior_wait_minutes: int = 0
+    is_waiting: bool = True
 
 
 class GeneralWaitingRoom:
@@ -52,6 +53,17 @@ class GeneralWaitingRoom:
         promoted = self._allocate_free_chairs() if was_seated else None
         return promoted
 
+    def patient(self, patient_id: str) -> WaitingPatient:
+        if patient_id not in self._active:
+            raise KeyError(f"Paciente no activo en sala: {patient_id}")
+        return self._active[patient_id][1]
+
+    def replace_patient(self, patient_id: str, patient: WaitingPatient) -> None:
+        if patient_id not in self._active or patient_id != patient.patient_id:
+            raise KeyError(f"Paciente no activo en sala: {patient_id}")
+        sequence, _ = self._active[patient_id]
+        self._active[patient_id] = (sequence, patient)
+
     def _allocate_free_chairs(self) -> str | None:
         promoted: str | None = None
         while len(self._seated) < self.chair_capacity:
@@ -74,6 +86,9 @@ class GeneralWaitingRoom:
     def status(self, patient_id: str) -> str:
         if patient_id not in self._active:
             return "left"
+        patient = self._active[patient_id][1]
+        if not patient.is_waiting:
+            return "treatment_seated" if patient_id in self._seated else "treatment_standing"
         return "seated" if patient_id in self._seated else "standing"
 
     def waiting_minutes(self, patient_id: str, now_minute: int) -> int:
@@ -101,6 +116,8 @@ class GeneralWaitingRoom:
         """
         candidates: list[tuple[int, str, float]] = []
         for sequence, patient in self._active.values():
+            if not patient.is_waiting:
+                continue
             wait = self.cumulative_waiting_minutes(patient.patient_id, now_minute)
             standing = patient.patient_id not in self._seated
             patient_data = {
@@ -144,8 +161,8 @@ class GeneralWaitingRoom:
 class WaitingAreas:
     """Route patients to independent waiting rooms and expose their chair states.
 
-    Routing follows the agreed initial structure: C1 to resuscitation, C2/C3 to
-    the dedicated C2 room, and C4/C5 to the general waiting room.
+    Routing sends C1 to resuscitation, C2 to the dedicated C2 room, and C3–C5
+    to the general waiting room.
     """
 
     def __init__(self, general_chairs: int = 36, c2_chairs: int = 24) -> None:
@@ -159,7 +176,7 @@ class WaitingAreas:
         routes = {
             "C1": "resuscitation",
             "C2": "c2",
-            "C3": "c2",
+            "C3": "general",
             "C4": "general",
             "C5": "general",
         }
@@ -168,9 +185,12 @@ class WaitingAreas:
         except KeyError as error:
             raise ValueError(f"Categoría de triage inválida: {triage_category}") from error
 
-    def arrive(self, patient: WaitingPatient) -> tuple[str, bool | None]:
-        """Route a patient; return (area, seated), with None for C1."""
-        area = self.route(patient.triage_category)
+    def arrive(self, patient: WaitingPatient,
+               area_override: str | None = None) -> tuple[str, bool | None]:
+        """Route a patient; an override supports the shared pre-triage waiting room."""
+        area = area_override or self.route(patient.triage_category)
+        if area not in {"general", "c2", "resuscitation"}:
+            raise ValueError(f"Sala de espera inválida: {area}")
         self._patient_records[patient.patient_id] = patient
         if area == "resuscitation":
             return area, None
@@ -179,20 +199,18 @@ class WaitingAreas:
         self._patient_rooms[patient.patient_id] = area
         return area, seated
 
-    def return_for_procedure_or_observation(
-        self,
-        patient: WaitingPatient,
-        now_minute: int,
-        waiting_stage: str,
+    def return_to_c2(
+        self, patient: WaitingPatient, now_minute: int,
+        waiting_stage: str = "treatment",
     ) -> tuple[str, bool]:
-        """Re-queue a patient in C2 while awaiting a procedure or observation.
+        """Re-queue a patient in C2 for treatment or another ordered stage.
 
         The patient joins the C2 FIFO at now_minute, competes for its 24 chairs,
         and stands in the hallway when all chairs are occupied. The caller should
         invoke this after the patient leaves their prior waiting area for care.
         """
-        if waiting_stage not in {"procedure", "observation"}:
-            raise ValueError("waiting_stage debe ser 'procedure' u 'observation'.")
+        if waiting_stage not in {"treatment", "reevaluation"}:
+            raise ValueError("Etapa de espera C2 inválida.")
         if patient.patient_id in self._patient_rooms:
             raise ValueError(
                 f"Paciente aún está en una sala de espera: {patient.patient_id}"
@@ -205,12 +223,48 @@ class WaitingAreas:
             age_group=previous.age_group,
             abandonment_threshold=previous.abandonment_threshold,
             waiting_stage=waiting_stage,
-            prior_wait_minutes=previous.prior_wait_minutes,
+            prior_wait_minutes=max(previous.prior_wait_minutes,
+                                   patient.prior_wait_minutes),
         )
         seated = self.c2.arrive(requeued)
         self._patient_rooms[patient.patient_id] = "c2"
         self._patient_records[patient.patient_id] = requeued
         return "c2", seated
+
+    def pause_for_treatment(self, patient_id: str, now_minute: int) -> None:
+        """Keep the chair occupied while treatment is delivered; pause waiting risk."""
+        if self._patient_rooms.get(patient_id) != "c2":
+            raise ValueError("El tratamiento en espera debe realizarse en sala C2.")
+        patient = self._patient_records[patient_id]
+        accumulated = self.c2.cumulative_waiting_minutes(patient_id, now_minute)
+        self.c2.replace_patient(patient_id, WaitingPatient(
+            patient_id=patient.patient_id,
+            queue_entered_minute=now_minute,
+            triage_category=patient.triage_category,
+            age_group=patient.age_group,
+            abandonment_threshold=patient.abandonment_threshold,
+            waiting_stage="treatment_in_progress",
+            prior_wait_minutes=accumulated,
+            is_waiting=False,
+        ))
+        self._patient_records[patient_id] = self.c2.patient(patient_id)
+
+    def resume_after_treatment(self, patient_id: str, now_minute: int) -> None:
+        """Resume the wait for physician reassessment without releasing the chair."""
+        if self._patient_rooms.get(patient_id) != "c2":
+            raise ValueError("El paciente debe permanecer en la sala C2.")
+        patient = self._patient_records[patient_id]
+        self.c2.replace_patient(patient_id, WaitingPatient(
+            patient_id=patient.patient_id,
+            queue_entered_minute=now_minute,
+            triage_category=patient.triage_category,
+            age_group=patient.age_group,
+            abandonment_threshold=patient.abandonment_threshold,
+            waiting_stage="reevaluation",
+            prior_wait_minutes=patient.prior_wait_minutes,
+            is_waiting=True,
+        ))
+        self._patient_records[patient_id] = self.c2.patient(patient_id)
 
     def leave(self, patient_id: str, now_minute: int) -> tuple[str, str | None]:
         """Remove a patient and retain accumulated waiting time for later stages."""
