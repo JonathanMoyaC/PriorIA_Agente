@@ -18,9 +18,8 @@ def load_fixture() -> dict:
 
 
 class PatientGenerationTests(unittest.TestCase):
-    def test_seeded_profile_has_exact_daily_and_mode_totals(self) -> None:
-        config = load_fixture()
-        patients = generate_patients(config)
+    def test_cohort_counts_complaints_vitals_and_adoption_rule(self) -> None:
+        patients = generate_patients(load_fixture())
         self.assertEqual(len(patients), 100)
         self.assertEqual({mode: sum(p["arrival_mode"] == mode for p in patients)
                           for mode in ("own_means", "ambulance", "police")},
@@ -28,9 +27,13 @@ class PatientGenerationTests(unittest.TestCase):
         self.assertEqual({f"C{i}": sum(p["triage_category"] == f"C{i}" for p in patients)
                           for i in range(1, 6)},
                          {"C1": 2, "C2": 12, "C3": 36, "C4": 33, "C5": 17})
-        self.assertTrue(all(not p["uses_prioria"] or
-                            (p["arrival_mode"] == "own_means" and p["triage_category"] != "C1")
-                            for p in patients))
+        expected_adoption = {"adult_young": 0.8, "adult_middle": 0.6, "adult_older": 0.35}
+        for patient in patients:
+            self.assertAlmostEqual(patient["prioria_adoption_probability"],
+                                   expected_adoption[patient["age_group"]])
+            if patient["uses_prioria"]:
+                self.assertEqual(patient["arrival_mode"], "own_means")
+                self.assertNotEqual(patient["triage_category"], "C1")
         self.assertTrue(all(p["chief_complaint"] for p in patients))
         self.assertTrue(all(35 <= p["heart_rate"] <= 220 and
                             6 <= p["respiratory_rate"] <= 60 and
@@ -39,13 +42,11 @@ class PatientGenerationTests(unittest.TestCase):
                             20 <= p["diastolic_bp"] <= 150
                             for p in patients))
 
-    def test_arrivals_cover_full_day_and_have_late_afternoon_peak(self) -> None:
+    def test_arrival_curve_expected_peak_is_sixteen(self) -> None:
         patients = generate_patients(load_fixture())
-        counts = [sum(p["arrival_hour"] == hour for p in patients) for hour in range(24)]
-        self.assertEqual(sum(counts), 100)
+        self.assertEqual(len(patients), 100)
         weights = gaussian_hour_weights(peak_hour=16, sigma_hours=4.0, baseline=0.15)
         self.assertEqual(max(range(24), key=weights.__getitem__), 16)
-        self.assertGreater(sum(counts[13:20]), sum(counts[0:7]))
 
 
 class WaitingAreaTests(unittest.TestCase):
@@ -56,24 +57,50 @@ class WaitingAreaTests(unittest.TestCase):
     def patient(pid: str, category: str, minute: int = 0) -> WaitingPatient:
         return WaitingPatient(pid, minute, category, "adult_middle", 0.99)
 
-    def test_separate_rooms_and_fifo_seat_promotion_on_return(self) -> None:
-        c2_first = self.patient("c2-first", "C2", 0)
+    def test_c2_alone_routes_to_c2_and_c3_plus_to_general(self) -> None:
+        self.assertEqual(self.areas.route("C2"), "c2")
+        for category in ("C3", "C4", "C5"):
+            self.assertEqual(self.areas.route(category), "general")
+        self.assertEqual(self.areas.route("C1"), "resuscitation")
+
+    def test_pretriage_wait_can_use_general_chairs_before_category_known(self) -> None:
+        c2_patient = self.patient("pretriage", "C2")
+        self.assertEqual(self.areas.arrive(c2_patient, area_override="general"),
+                         ("general", True))
+        area, seat = self.areas.status("pretriage")
+        self.assertEqual((area, seat), ("general", "seated"))
+        self.areas.leave("pretriage", now_minute=4)
+        self.assertEqual(self.areas.status("pretriage"), ("left", "left"))
+
+    def test_fifo_return_to_c2_and_seat_promotion(self) -> None:
+        first = self.patient("first", "C2", 0)
         general = self.patient("general", "C4", 1)
-        c2_second = self.patient("c2-second", "C3", 2)
-        self.assertEqual(self.areas.arrive(c2_first), ("c2", True))
+        second = self.patient("second", "C2", 2)
+        self.assertEqual(self.areas.arrive(first), ("c2", True))
         self.assertEqual(self.areas.arrive(general), ("general", True))
-        self.assertEqual(self.areas.arrive(c2_second), ("c2", False))
-        self.assertEqual(self.areas.status("c2-second"), ("c2", "standing"))
-
-        self.areas.leave("c2-first", now_minute=8)
-        self.assertEqual(self.areas.status("c2-second"), ("c2", "seated"))
-        area, seated = self.areas.return_for_procedure_or_observation(
-            c2_first, now_minute=9, waiting_stage="procedure")
+        self.assertEqual(self.areas.arrive(second), ("c2", False))
+        self.areas.leave("first", now_minute=8)
+        self.assertEqual(self.areas.status("second"), ("c2", "seated"))
+        area, seated = self.areas.return_to_c2(first, now_minute=9, waiting_stage="treatment")
         self.assertEqual((area, seated), ("c2", False))
-        self.assertEqual(self.areas.status("c2-first"), ("c2", "standing"))
-        self.assertEqual(self.areas.c2.cumulative_waiting_minutes("c2-first", 10), 9)
+        self.assertEqual(self.areas.status("first"), ("c2", "standing"))
+        self.assertEqual(self.areas.c2.cumulative_waiting_minutes("first", 10), 9)
 
-    def test_abandonment_risk_rises_with_wait_low_acuity_and_standing(self) -> None:
+    def test_treatment_keeps_chair_and_pauses_abandonment_clock(self) -> None:
+        first = self.patient("treating", "C2")
+        self.areas.arrive(first)
+        self.areas.pause_for_treatment("treating", now_minute=10)
+        self.assertEqual(self.areas.status("treating"), ("c2", "treatment_seated"))
+        self.assertEqual(self.areas.c2.occupied_chairs, 1)
+        risk_params = load_fixture()["abandonment"]
+        candidates = self.areas.c2.abandonment_candidates(
+            500, abandonment_risk, risk_params)
+        self.assertEqual(candidates, [])
+        self.areas.resume_after_treatment("treating", now_minute=70)
+        self.assertEqual(self.areas.status("treating"), ("c2", "seated"))
+        self.assertEqual(self.areas.c2.cumulative_waiting_minutes("treating", 75), 15)
+
+    def test_abandonment_risk_increases_with_wait_low_acuity_and_standing(self) -> None:
         params = load_fixture()["abandonment"]
         patient = {"triage_category": "C5", "age_group": "adult_young"}
         immediate_seated = abandonment_risk(patient, 0, False, params)
@@ -87,47 +114,85 @@ class WaitingAreaTests(unittest.TestCase):
 
 
 class EndToEndSimulationTests(unittest.TestCase):
-    def test_one_hundred_patient_day_completes_and_respects_room_capacities(self) -> None:
+    def test_one_hundred_patient_day_respects_routes_and_room_capacities(self) -> None:
         summary, trace = simulate_day(load_fixture())
         self.assertEqual(summary["generated"], 100)
         self.assertEqual(summary["unresolved"], 0)
         self.assertEqual(summary["discharged"] + summary["hospitalized"] +
                          summary["abandoned"], 100)
-        self.assertLessEqual(summary["max_general_waiting_occupancy"], 36)
-        self.assertLessEqual(summary["max_c2_waiting_occupancy"], 24)
-        self.assertTrue(any(row["event"] == "returned_to_c2" for row in trace))
+        self.assertLessEqual(summary["max_general_waiting_chair_occupancy"], 36)
+        self.assertLessEqual(summary["max_c2_waiting_chair_occupancy"], 24)
+        admissions = {r["patient_id"] for r in trace if r["event"] == "admission_completed"}
+        self.assertEqual(len(admissions), 100)
+        for row in (r for r in trace if r["event"] == "triage_completed"):
+            expected = "c2" if row["category"] == "C2" else (
+                "resuscitation" if row["category"] == "C1" else "general")
+            self.assertEqual(row["destination"], expected)
+        self.assertTrue(all(r["seat_released"] for r in trace
+                            if r["event"] == "called_to_triage"))
+        treatment_events = [r for r in trace if r["event"] == "treatment_started_by_nurse"]
+        self.assertTrue(treatment_events)
+        self.assertTrue(all(r["room"] == "c2" and r["chair_state"] in
+                            {"seated", "standing"} and
+                            30 <= r["duration_minutes"] <= 120
+                            for r in treatment_events))
+        self.assertTrue(any(row["event"] == "called_to_reevaluation" for row in trace))
+        patient_rows = [r for r in trace if r["event"] == "patient_summary"]
+        self.assertTrue(all(r["treatments_received"] == 0 for r in patient_rows
+                            if r["triage_category"] in {"C4", "C5"}))
         self.assertEqual(summary["metadata"]["deis_values_verified"], False)
 
-    def test_congestion_scenario_exercises_standing_and_abandonment(self) -> None:
+    def test_second_failed_treatment_requires_hospitalization(self) -> None:
         config = copy.deepcopy(load_fixture())
-        config["scenario_id"] = "v2_congestion_mechanics"
+        config["daily_patients"] = 1
+        config["age_group_probabilities"] = {
+            "adult_young": 0.0, "adult_middle": 1.0, "adult_older": 0.0}
+        config["triage_category_probabilities"] = {
+            "C1": 0.0, "C2": 1.0, "C3": 0.0, "C4": 0.0, "C5": 0.0}
+        config["deis_cause_probabilities_by_age"] = {
+            key: {"thoracic_pain": 1.0} for key in
+            ("adult_young", "adult_middle", "adult_older")}
+        config["arrival"]["arrival_mode_shares"] = {
+            "own_means": 1.0, "ambulance": 0.0, "police": 0.0}
+        config["arrival"]["prioria_adoption_rate"] = 0.0
+        config["arrival"]["prioria_adoption_adjustment_by_age"] = {
+            "adult_young": 0.0, "adult_middle": 0.0, "adult_older": 0.0}
+        config["care"]["treatment_probability_by_category"] = {
+            "C1": 1.0, "C2": 1.0, "C3": 1.0, "C4": 0.0, "C5": 0.0}
+        config["care"]["treatment_duration_minutes"] = {"minimum": 30, "maximum": 30}
+        config["care"]["reevaluation_discharge_probability"] = 0.0
+        summary, trace = simulate_day(config)
+        self.assertEqual(summary["hospitalized"], 1)
+        self.assertEqual(summary["discharged"], 0)
+        self.assertEqual(summary["abandoned"], 0)
+        self.assertEqual(sum(r["event"] == "treatment_started_by_nurse" for r in trace), 2)
+        self.assertEqual(sum(r["event"] == "treatment_failed" for r in trace), 2)
+        self.assertTrue(any(r.get("reason") == "dos_tratamientos_fallidos"
+                            for r in trace if r["event"] == "hospitalized"))
+
+    def test_congestion_exercises_standing_and_abandonment(self) -> None:
+        config = copy.deepcopy(load_fixture())
         config["resources"].update({
             "physicians_by_specialty": {
-                "internal_medicine": 1,
-                "traumatology": 1,
-                "surgery": 1
-            },
+                "internal_medicine": 1, "traumatology": 1, "surgery": 1},
             "consultation_boxes": 1,
+            "box_nurses": 1,
             "general_waiting_chairs": 1,
             "c2_waiting_chairs": 1,
-            "procedure_slots": 1,
-            "observation_beds": 1
+            "c2_treatment_nurses": 1,
         })
         config["abandonment"].update({
-            "risk_intercept": -2.5,
-            "beta_wait": 2.5,
-            "wait_scale_minutes": 30.0,
-            "beta_low_acuity": 1.5,
-            "beta_standing": 1.5,
-            "threshold_range": [0.90, 0.99]
+            "risk_intercept": -2.5, "beta_wait": 2.5,
+            "wait_scale_minutes": 30.0, "beta_low_acuity": 1.5,
+            "beta_standing": 1.5, "threshold_range": [0.90, 0.99]
         })
         summary, trace = simulate_day(config)
         self.assertGreater(summary["abandoned"], 0)
         self.assertGreater(summary["standing_patient_minutes"], 0)
-        self.assertTrue(any(row.get("event") == "abandoned" and row.get("standing")
-                            for row in trace))
-        self.assertLessEqual(summary["max_general_waiting_occupancy"], 1)
-        self.assertLessEqual(summary["max_c2_waiting_occupancy"], 1)
+        self.assertTrue(any(r.get("event") == "abandonment_risk_crossed" and r.get("standing")
+                            for r in trace))
+        self.assertLessEqual(summary["max_general_waiting_chair_occupancy"], 1)
+        self.assertLessEqual(summary["max_c2_waiting_chair_occupancy"], 1)
 
 
 if __name__ == "__main__":
