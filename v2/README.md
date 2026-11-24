@@ -1,36 +1,40 @@
-# PriorIA V2 — simulación sintética de flujo
+# PriorIA V2 — flujo sintético de pacientes
 
-V2 simula una jornada de urgencias separada del benchmark de asignación V1. La
-unidad genera 100 perfiles, procesa el ingreso a PriorIA o triage humano, asigna
-pacientes a las salas de espera, atiende consultas y modela etapas opcionales de
-procedimiento y observación.
+V2 ejecuta una jornada sintética completa desde el ingreso hasta el alta,
+hospitalización o abandono. Se mantiene separada del benchmark V1 de asignación
+a boxes.
 
-## Reglas implementadas
+## Comportamiento implementado
 
-- Rangos: adulto joven 18–39, adulto medio 40–64 y adulto mayor desde 65 años.
-- Llegadas distribuidas durante 24 horas mediante una curva configurable cuyo
-  máximo esperado está a las 16:00. La hora máxima observada en una muestra de
-  100 pacientes puede variar por azar.
-- Cuotas diarias configurables de llegada propia, ambulancia y policía; por
-  defecto se conserva 80/5/15. Las preferencias por edad ajustan la asignación
-  individual sin cambiar esas cuotas.
-- Uso sintético de PriorIA solo para llegada por medios propios y categorías
-  distintas de C1; la probabilidad depende del grupo etario.
-- Recursos del plano: 5 cabinas PriorIA, 8 boxes, 2 camas de reanimación, 12
-  médicos (4 por especialidad), 8 enfermeras/os de box, 3 de triage, 36 sillas
-  generales y 24 sillas en sala C2.
-- C2/C3 esperan en la sala C2 y C4/C5 en la sala general. Cada sala asigna sillas
-  por FIFO; quienes exceden su capacidad esperan de pie. C1 se dirige a
-  reanimación.
-- Quien espera un procedimiento o una observación vuelve a la cola FIFO de C2.
-  Las sillas de ambas salas se administran por separado.
-- La probabilidad de abandono aumenta con la espera acumulada, la menor gravedad
-  y la condición de estar de pie. Se evalúa cada minuto frente a un umbral
-  individual configurable. El tiempo de espera acumulado se conserva al volver
-  desde una consulta o una etapa clínica.
-- La duración de consulta depende de C1–C5; causa y especialidad determinan la
-  ruta profesional. Una evolución desfavorable puede generar un segundo
-  procedimiento; si ese tampoco es favorable, el paciente se hospitaliza.
+- Cohorte configurable de 100 pacientes, grupos etarios 18–39, 40–64 y 65+,
+  categorías C1–C5 y grupos de causas. Los valores del fixture son sintéticos.
+- Llegadas a lo largo de 24 horas con máximo esperado a las 16:00; cuotas diarias
+  80% por medios propios, 5% ambulancia y 15% policía.
+- Tras admisión, los pacientes esperan en la sala general para PriorIA o triage
+  humano y ocupan una silla FIFO si hay disponibilidad. Al ser llamados a
+  categorización, liberan la silla.
+- La adopción de PriorIA se calcula como tasa base más un ajuste por edad, acotado
+  entre 0 y 1. Solo es elegible la llegada por medios propios y C1 pasa a triage
+  humano. La probabilidad base y los ajustes son configurables.
+- Después de categorizar, C1 va a reanimación, C2 a la sala C2 y C3–C5 a la sala
+  general. Cada sala tiene cola FIFO independiente, con 24 y 36 sillas. Si no hay
+  silla, el paciente espera de pie.
+- Ser llamado a consulta o reevaluación libera la silla. C4/C5 sin tratamiento
+  se dan de alta por la puerta principal.
+- Si se indica tratamiento, el paciente vuelve a la sala C2 y espera una
+  enfermera. El tratamiento dura entre 30 y 120 minutos por sorteo uniforme. La
+  silla sigue ocupada durante el tratamiento; al terminar, el paciente espera
+  allí la reevaluación médica.
+- Una reevaluación favorable da el alta. Si falla, se indica otro tratamiento;
+  al segundo fallo, el paciente se hospitaliza.
+- La ecuación de abandono se evalúa cada minuto mientras el paciente espera. Usa
+  espera acumulada, categoría, edad y postura. El tiempo de tratamiento no se
+  suma como espera y no genera abandono mientras la enfermera está atendiendo.
+- Configuración inicial de recursos: 2 puestos de admisión, 5 cabinas PriorIA,
+  2 estaciones de triage, 3 enfermeras/os de triage, 12 médicos (4 por
+  especialidad), 8 boxes con 8 enfermeras/os, 2 camas de reanimación, 36 sillas
+  generales, 24 sillas C2 y 1 enfermera/o para tratamientos en C2. Lo último es
+  un supuesto configurable a confirmar.
 
 ## Ejecutar
 
@@ -39,29 +43,20 @@ Desde la raíz del repositorio:
 ```bash
 python v2/simulate_day.py --config v2/configs/smoke_test.json --output-dir outputs/v2_smoke
 python -m unittest discover -s v2/tests -v
+python v2/run_smoke_replications.py --replications 10
 ```
 
-La corrida produce `summary.json`, `trace.jsonl` y `patients.csv` con perfiles,
-motivos de consulta, signos vitales sintéticos, tiempos, eventos y desenlaces.
+La simulación produce `summary.json`, `trace.jsonl` y `patients.csv`, con eventos,
+tiempos, motivos de consulta, signos vitales sintéticos y desenlaces.
 
-## Estado de calibración
+## Calibración y límites
 
-`configs/smoke_test.json` es un fixture de prueba mecánica. Sus distribuciones de
-edad, categorías y causas, signos vitales, uso de PriorIA, duraciones clínicas y
-desenlaces son supuestos sintéticos; **no son datos observados ni una calibración
-DEIS**. Por eso el fixture declara `deis_values_verified: false`. El generador
-solo debe usarse para una corrida calibrada cuando se ingresen distribuciones
-DEIS verificadas y se actualicen las fuentes, el año, territorio y denominador
-en la metadata.
+`configs/smoke_test.json` valida el funcionamiento mecánico; sus distribuciones
+de edad, categorías, causas, signos vitales, adopción, tratamientos y desenlaces
+**no son datos DEIS ni prevalencias observadas**. El generador exige distribuciones
+verificadas o una configuración declarada como fixture de prueba.
 
-La estructura incluye recursos configurables de procedimientos y observación.
-Los valores del fixture (2 puestos de procedimiento y 4 camas de observación)
-son parámetros mecánicos provisionales porque la capacidad de esos espacios aún
-no se ha fijado. Las probabilidades de evolución y hospitalización también
-requieren fuentes o calibración local. El simulador no categoriza ni recomienda
-tratamientos clínicos.
-
-La dotación de personal se mantiene constante durante las 24 horas en este
-prototipo; no se han modelado turnos, colaciones ni ausentismo. Esta simplificación
-debe reemplazarse por calendarios de turno antes de interpretar tiempos o carga
-de trabajo como una estimación operacional.
+La dotación se mantiene constante durante las 24 horas. Las tasas de adopción,
+tratamiento, reevaluación, hospitalización y número de enfermeras disponibles en
+C2 aún requieren datos o decisiones operacionales. El simulador no categoriza ni
+recomienda tratamientos clínicos.
