@@ -106,7 +106,7 @@ deben usar el manifiesto versionado y el ejecutor experimental.
 
 ## Escenarios de límites de seguridad
 
-Ejecuta los diez escenarios de borde, por separado de las jornadas estadísticas:
+Ejecuta los once escenarios de borde, por separado de las jornadas estadísticas:
 
 ```bash
 python run_safety_scenarios.py
@@ -115,3 +115,25 @@ python run_safety_scenarios.py
 Guarda los resultados y las trazas en `outputs/safety/`. Estos casos cubren
 prioridad, compatibilidad, abandono, liberación de boxes, tiempos de espera y
 cierre del horizonte.
+
+## Informe y anexos
+
+El borrador del informe está en `informe_prioria.pdf`; las fuentes editables son
+`informe_prioria.tex`, `referencias.bib` y `trace_appendix.tex`. El anexo de
+trazas se reconstruye desde los registros versionados:
+
+```bash
+python generate_trace_appendix.py
+```
+
+Para crear el PDF desde los registros se requiere `reportlab==4.4.9`:
+
+```bash
+python -m pip install -r requirements-report.txt
+python build_report_pdf.py
+```
+
+La evaluación reservada ya fue ejecutada y está guardada en
+`outputs/experiment/evaluation/`. No se deben modificar reglas ni volver a
+ejecutar la evaluación para ajustar el agente; cualquier cambio posterior se
+debe presentar como una nueva versión exploratoria.

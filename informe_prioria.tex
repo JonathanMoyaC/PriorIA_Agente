@@ -1,0 +1,117 @@
+\documentclass[conference]{IEEEtran}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{url}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{balance}
+\title{PriorIA: asignación de pacientes elegibles a boxes compatibles mediante búsqueda en haz}
+\author{\IEEEauthorblockN{Jonathan Moya C.}}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Este trabajo presenta PriorIA, un agente que recomienda la asignación de pacientes ya triageados a boxes compatibles en un entorno de urgencia sintético y discreto. El agente replanifica ante llegadas y liberaciones, usa búsqueda en haz de ancho 20 y horizonte 5, y aplica prioridad estricta entre pacientes actualmente factibles. Se comparó con un pipeline fijo y una política reactiva en 120 jornadas pareadas: 80 para desarrollo y 40 reservadas para evaluación. La métrica primaria fue la espera media restringida hasta ocupar un box compatible, con 240 minutos imputados a quienes no ocuparon uno. En evaluación, PriorIA redujo esta espera en 2,08 minutos por jornada frente al pipeline fijo (IC bootstrap pareado del 95\%: [−3,93; −0,34]), una reducción relativa de 2,52\%, inferior al objetivo preespecificado de 10\%. La diferencia estimada de abandono fue −0,83 puntos porcentuales (IC 95\%: [−2,08; +0,42]), cuyo límite superior quedó bajo el margen de no inferioridad de +1 pp. No se observaron asignaciones incompatibles ejecutadas ni intentos inválidos en los experimentos principales, y las 33 corridas de escenarios de límites pasaron sus verificaciones. El resultado es evidencia de una mejora pequeña dentro del simulador, no de efectividad clínica ni de preparación para uso hospitalario.
+\end{abstract}
+
+\begin{IEEEkeywords}
+agentes inteligentes, búsqueda en haz, simulación de eventos discretos, asignación, urgencias
+\end{IEEEkeywords}
+
+\section{Introducción}
+La asignación de pacientes a espacios de atención debe considerar prioridad clínica y compatibilidad entre las necesidades del paciente y las capacidades disponibles. Este proyecto delimita la intervención a pacientes que ya completaron triage y fueron declarados elegibles; no realiza triage, diagnóstico, admisión ni asignación de cabina. La salida es una recomendación de asignación simulada.
+
+La pregunta experimental es: ¿un agente que replanifica y busca secuencias cortas de asignación reduce la espera restringida frente a un pipeline fijo sin exceder un aumento de abandono de un punto porcentual ni ejecutar asignaciones incompatibles? La hipótesis registrada antes de abrir la partición reservada fue una reducción de al menos 10\% en la espera media restringida, con aumento de abandono no mayor a 1 pp. La evaluación se ejecutó una vez con el código y parámetros identificados por hash en los archivos de configuración.
+
+\section{Fundamentos y formulación}
+Un agente basado en modelo mantiene una representación del estado y usa un modelo de transición para seleccionar acciones; la búsqueda en haz conserva un conjunto acotado de estados prometedores en cada nivel de expansión \cite{russell2021aima}. PriorIA usa una búsqueda en haz acotada para comparar planes cortos de asignación, en lugar de buscar una política óptima global. Es una aplicación de búsqueda heurística bajo un modelo conocido, no un agente que aprende de datos clínicos.
+
+\subsection{Trabajo relacionado}
+La investigación de flujo en urgencias usa simulación de eventos discretos y modelos de colas para estudiar tiempos de espera, ocupación y abandono. Hurwitz et al. construyeron una plataforma configurable de simulación que representa prioridades, tolerancia a la espera y distintos cuellos de botella, destacando que las intervenciones dependen del contexto del servicio \cite{hurwitz2014}. Van de Vrugt y Boucherie estudiaron políticas de asignación de salas mediante teoría de colas y simulación, con foco en recursos compartidos y tiempos de espera \cite{vandevrugt2016}. PriorIA comparte el uso de escenarios simulados y políticas de asignación, pero su aporte de curso está en el ciclo percepción--estado--búsqueda--acción y en la comparación explícita con un pipeline fijo. A diferencia de esos modelos, el presente simulador no se calibra ni valida con datos de una unidad real; sirve para evaluar comportamiento algorítmico en un entorno sintético.
+
+\subsection{PEAS y entorno}
+La medida de desempeño es la espera restringida hasta ocupar un box compatible, junto con abandono, asignaciones, utilización y seguridad. El entorno contiene pacientes elegibles, sus prioridades, requerimientos de capacidades y paciencia, además de tres boxes abstractos con capacidades distintas. Los actuadores asignan un paciente a un box compatible o esperan. Los sensores observan la cola, el estado de los boxes, el reloj de simulación y los eventos de llegada y liberación.
+
+El entorno es completamente observable por el simulador, dinámico, discreto, secuencial y estocástico en llegadas y duraciones. Es de un solo agente decisor con varios pacientes y recursos pasivos; los pacientes no son agentes estratégicos. Cada jornada tiene 18 pacientes, horizonte de 240 minutos y duración esperada por clase de servicio de 20, 40 o 65 minutos. La unidad temporal es un minuto.
+
+\begin{figure}[t]
+\centering
+\setlength{\fboxsep}{4pt}
+\fbox{\parbox{0.46\columnwidth}{\centering Observación de cola y boxes\\$\downarrow$\\Estado interno y restricciones\\$\downarrow$\\Búsqueda en haz; elegir acción\\$\downarrow$\\Asignar o esperar; cambia el entorno\\$\looparrowleft$ nueva observación}}
+\caption{Ciclo de decisión de PriorIA. Una asignación o liberación modifica la observación usada para replanificar.}
+\label{fig:cycle}
+\end{figure}
+
+\subsection{Políticas comparadas}
+\textit{Pipeline fijo} aplica el orden por prioridad, FIFO y primer box compatible libre. \textit{Reactiva} toma decisiones en respuesta a cada evento con la misma regla local. \textit{PriorIA} aplica búsqueda en haz de ancho $B=20$ y horizonte $H=5$, estima duraciones con medias deterministas por clase y replanifica cuando ocurre un evento. Su orden de prioridad es estricto entre pacientes que tienen al menos un box compatible libre. Cuando no hay par factible, la regla no permite que una prioridad bloqueada impida asignar un paciente factible de menor prioridad. Una búsqueda que alcanza 50 ms recurre a una acción reactiva segura.
+
+La compatibilidad es una restricción dura validada antes de ejecutar cada asignación. Los pacientes que exceden su paciencia abandonan según la regla temporal discreta implementada; quienes siguen sin asignación al final se mantienen sin asignación y reciben 240 minutos en la métrica primaria. La espera restringida de cada paciente es el tiempo entre elegibilidad y ocupación del box, truncado por el horizonte para abandonos o casos aún sin asignar. Se promedia sobre todos los pacientes elegibles de cada jornada.
+
+\section{Diseño experimental}
+Se generaron 120 escenarios con semillas predefinidas en el manifiesto: 80 de desarrollo y 40 de evaluación reservada. Las tres políticas recibieron los mismos escenarios y semillas. Los parámetros y el hash del código se registraron en \texttt{outputs/experiment/evaluation/run\_config.json}. La métrica primaria se comparó mediante diferencias pareadas por jornada y un bootstrap pareado de 5.000 remuestras para intervalos del 95\%. Se reportan diferencias absolutas y, para la espera, el porcentaje relativo respecto del promedio del pipeline fijo. No se interpreta el intervalo de espera como prueba de que se cumplió el umbral de magnitud del 10\%: ese umbral corresponde a la hipótesis sustantiva.
+
+Además, se definieron 11 escenarios deterministas de límites para probar orden de prioridad, compatibilidad, colas vacías, abandono, liberación, horizonte y fallback. Se ejecutaron las 11 condiciones con cada política, sumando 33 corridas.
+
+\section{Resultados}
+La Tabla~\ref{tab:means} resume los promedios por conjunto. En la evaluación reservada, PriorIA obtuvo 80,61 minutos de espera restringida media frente a 82,69 con el pipeline fijo. La diferencia pareada fue −2,083 minutos (IC 95\% [−3,925; −0,343]), equivalente a una reducción relativa de 2,52\%. El intervalo excluye cero, pero el efecto queda muy por debajo de la reducción de al menos 10\% planteada en la hipótesis; por ello, la hipótesis de magnitud no se respalda.
+
+\begin{table}[t]
+\caption{Promedios por política y partición}
+\label{tab:means}
+\centering
+\small
+\begin{tabular}{llrrrr}
+\toprule
+Partición & Política & Espera (min) & Aband. (\%) & P1 (min) & Asig. \\
+\midrule
+Desarrollo & Fija & 85,35 & 37,15 & 24,92 & 11,31 \\
+ & Reactiva & 85,35 & 37,15 & 24,92 & 11,31 \\
+ & PriorIA & 83,01 & 35,83 & 25,32 & 11,55 \\
+Evaluación & Fija & 82,69 & 35,42 & 27,94 & 11,63 \\
+ & Reactiva & 82,69 & 35,42 & 27,94 & 11,63 \\
+ & PriorIA & 80,61 & 34,58 & 29,10 & 11,78 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La diferencia de abandono fue −0,008333 (−0,833 pp; IC 95\% [−2,083; +0,417] pp). El intervalo incluye cero, por lo que no se afirma una disminución concluyente. Su límite superior queda bajo el margen de +1 pp establecido. En espera de prioridad 1, la diferencia fue +1,156 minutos (IC 95\% [−1,643; +4,403]); el signo positivo es un posible costo que merece atención. Los intervalos por prioridad para P1 a P5 incluyen cero, así que no se concluyen diferencias por categoría.
+
+Pipeline fijo y reactiva produjeron exactamente los mismos resultados y asignaciones en ambas particiones. Esta equivalencia muestra que la definición actual de la baseline reactiva no genera una comparación empíricamente distinta y limita lo que puede afirmarse sobre el valor de replanificar por eventos. En las jornadas principales hubo cero intentos inválidos y cero asignaciones incompatibles ejecutadas. Las 33 corridas de escenarios de límites pasaron. El tiempo de decisión de PriorIA en evaluación promedió 0,050 ms; el promedio del p95 por jornada fue 0,128 ms, y el máximo individual observado fue 0,546 ms. No se activó el fallback de 50 ms en las jornadas reservadas.
+
+\section{Análisis y limitaciones}
+El resultado apoya una mejora promedio pequeña en esta distribución sintética, pero no alcanza el efecto mínimo planteado. La variación entre jornadas es relevante: hay casos donde la búsqueda ayuda y otros donde empeora. El anexo incluye el caso con mayor mejora observada (T111), un caso desfavorable (T114) y una corrida construida para forzar el timeout (S11). Se seleccionaron por sus valores observados y se presentan como ejemplos ilustrativos, no como evidencia representativa.
+
+El modelo supone llegadas, prioridades, capacidades y clases de servicio sintéticas; representa tres boxes abstractos y 18 pacientes por jornada. No fue calibrado ni validado con datos hospitalarios y no incorpora restricciones de personal, traslados, severidad cambiante, equidad, protocolos clínicos ni juicio profesional. La duración determinista usada en búsqueda puede diferir del servicio realizado. Las pruebas de límites verifican condiciones diseñadas, pero no prueban seguridad para todas las secuencias posibles. No se infieren consecuencias clínicas, causalidad en una unidad real ni generalización fuera de este simulador.
+
+\section{Conclusiones y trabajo futuro}
+PriorIA, configurado con prioridad estricta y búsqueda en haz, logró en 40 escenarios reservados una reducción pareada de 2,08 minutos (2,52\%) frente al pipeline fijo; el IC del 95\% excluyó cero, pero el objetivo de 10\% no se alcanzó. El intervalo del cambio de abandono quedó dentro del límite superior de +1 pp y no se observaron incompatibilidades ejecutadas. La posible espera adicional de P1 y la equivalencia entre baseline fija y reactiva deben mantenerse explícitas. El siguiente trabajo es ampliar escenarios independientes, investigar la causa de las diferencias por prioridad, enriquecer la dinámica de recursos y validar supuestos con expertos antes de considerar cualquier uso fuera del entorno simulado.
+
+\appendices
+\section{Declaración de uso de inteligencia artificial}
+Se utilizó ChatGPT/Codex (modelo GPT-6) como apoyo para discutir el diseño del agente, elaborar y revisar código del simulador y del análisis, organizar resultados y preparar este borrador. La decisión de usar prioridad estricta y la interpretación final corresponden al autor. Jonathan Moya debe revisar, corregir y aprobar toda afirmación, código y referencia antes de entregar. Esta declaración debe ajustarse a la herramienta y versión efectivamente utilizadas y a las reglas del curso.
+
+\section{Trazas comentadas}
+Las Tablas~\ref{tab:trace_t111}--\ref{tab:trace_s11} enumeran, en orden temporal, cada decisión de PriorIA en los escenarios escogidos. Cada fila resume la observación de cola, boxes libres y pares factibles; la traza JSONL comprimida registrada en el repositorio conserva el objeto completo de observación, estado, deliberación, decisión, latencia y eventos. Los comentarios describen lo que muestra el escenario y no deben leerse como conclusiones generales.
+
+\onecolumn
+\input{trace_appendix.tex}
+
+\section{Declaración de originalidad}
+Declaro que revisé el trabajo y que la versión final representa fielmente mis decisiones, análisis y aportes. Declaro también el uso de herramientas de inteligencia artificial en el alcance descrito en el apéndice correspondiente.
+
+\vspace{1.5cm}
+Nombre: Jonathan Moya C. \hfill Firma: \rule{4cm}{0.4pt}
+
+Fecha: \rule{4cm}{0.4pt}
+
+\twocolumn
+\balance
+\bibliographystyle{IEEEtran}
+\bibliography{referencias}
+\end{document}

@@ -1,0 +1,263 @@
+\subsection{T111: mayor mejora observada}
+Ejemplo ilustrativo seleccionado por tener la mayor reducción de espera primaria observada: 90,056 a 71,889 min (−18,167 min).
+\begin{longtable}{r p{3.0cm} p{1.25cm} p{2.7cm} p{2.0cm} p{2.4cm}}
+\caption{Traza de decisiones de T111}\label{tab:trace_t111}\\
+\toprule t & Cola elegible (prioridad, espera) & Boxes libres & Pares factibles & Acción & Comentario / evento \\
+\midrule\endfirsthead
+\toprule t & Cola elegible (prioridad, espera) & Boxes libres & Pares factibles & Acción & Comentario / evento \\
+\midrule\endhead
+0 & P002(P1, espera 0m), P003(P1, espera 0m), P001(P3, espera 0m) & B01, B02, B03 & P002/B01, P002/B02, P002/B03, P003/B03, P001/B03 & assign P002 a B01 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.119 ms \\
+0 & P003(P1, espera 0m), P001(P3, espera 0m) & B02, B03 & P003/B03, P001/B03 & assign P003 a B03 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.030 ms \\
+0 & P001(P3, espera 0m) & B02 & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.019 ms \\
+15 & P006(P2, espera 0m), P001(P3, espera 15m), P004(P3, espera 0m), P005(P5, espera 0m) & B02 & P006/B02, P005/B02 & assign P006 a B02 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.048 ms \\
+15 & P001(P3, espera 15m), P004(P3, espera 0m), P005(P5, espera 0m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.047 ms \\
+30 & P001(P3, espera 30m), P004(P3, espera 15m), P008(P3, espera 0m), P009(P3, espera 0m), P005(P5, espera 15m), P007(P5, espera 0m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.238 ms \\
+36 & P001(P3, espera 36m), P004(P3, espera 21m), P008(P3, espera 6m), P009(P3, espera 6m), P005(P5, espera 21m), P007(P5, espera 6m) & B01 & P009/B01, P007/B01 & assign P009 a B01 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.093 ms \\
+36 & P001(P3, espera 36m), P004(P3, espera 21m), P008(P3, espera 6m), P005(P5, espera 21m), P007(P5, espera 6m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.099 ms \\
+43 & P001(P3, espera 43m), P004(P3, espera 28m), P008(P3, espera 13m), P005(P5, espera 28m), P007(P5, espera 13m) & B03 & P001/B03, P004/B03, P008/B03, P007/B03 & assign P004 a B03 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.135 ms \\
+43 & P001(P3, espera 43m), P008(P3, espera 13m), P005(P5, espera 28m), P007(P5, espera 13m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.068 ms \\
+45 & P012(P1, espera 0m), P001(P3, espera 45m), P008(P3, espera 15m), P011(P3, espera 0m), P010(P4, espera 0m), P005(P5, espera 30m), P007(P5, espera 15m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.068 ms \\
+56 & P012(P1, espera 11m), P001(P3, espera 56m), P008(P3, espera 26m), P011(P3, espera 11m), P010(P4, espera 11m), P005(P5, espera 41m), P007(P5, espera 26m) & B02 & P012/B02, P011/B02, P010/B02, P005/B02, P007/B02 & assign P012 a B02 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.081 ms \\
+56 & P001(P3, espera 56m), P008(P3, espera 26m), P011(P3, espera 11m), P010(P4, espera 11m), P005(P5, espera 41m), P007(P5, espera 26m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.083 ms \\
+59 & P001(P3, espera 59m), P008(P3, espera 29m), P011(P3, espera 14m), P010(P4, espera 14m), P005(P5, espera 44m), P007(P5, espera 29m) & B03 & P001/B03, P008/B03, P011/B03, P007/B03 & assign P008 a B03 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.116 ms \\
+59 & P001(P3, espera 59m), P011(P3, espera 14m), P010(P4, espera 14m), P005(P5, espera 44m), P007(P5, espera 29m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.037 ms \\
+60 & P013(P2, espera 0m), P014(P2, espera 0m), P001(P3, espera 60m), P011(P3, espera 15m), P010(P4, espera 15m), P015(P4, espera 0m), P005(P5, espera 45m), P007(P5, espera 30m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.087 ms \\
+61 & P013(P2, espera 1m), P014(P2, espera 1m), P011(P3, espera 16m), P010(P4, espera 16m), P015(P4, espera 1m), P005(P5, espera 46m), P007(P5, espera 31m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.067 ms \\
+75 & P013(P2, espera 15m), P014(P2, espera 15m), P017(P2, espera 0m), P011(P3, espera 30m), P010(P4, espera 30m), P015(P4, espera 15m), P016(P4, espera 0m), P018(P4, espera 0m), P005(P5, espera 60m), P007(P5, espera 45m) & B02 & P013/B02, P014/B02, P017/B02, P011/B02, P010/B02, P015/B02, P005/B02, P007/B02 & assign P014 a B02 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.204 ms \\
+75 & P013(P2, espera 15m), P017(P2, espera 0m), P011(P3, espera 30m), P010(P4, espera 30m), P015(P4, espera 15m), P016(P4, espera 0m), P018(P4, espera 0m), P005(P5, espera 60m), P007(P5, espera 45m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.052 ms \\
+76 & P013(P2, espera 16m), P017(P2, espera 1m), P011(P3, espera 31m), P010(P4, espera 31m), P015(P4, espera 16m), P016(P4, espera 1m), P018(P4, espera 1m), P007(P5, espera 46m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.045 ms \\
+78 & P013(P2, espera 18m), P017(P2, espera 3m), P011(P3, espera 33m), P010(P4, espera 33m), P015(P4, espera 18m), P016(P4, espera 3m), P018(P4, espera 3m), P007(P5, espera 48m) & B03 & P017/B03, P011/B03, P015/B03, P016/B03, P018/B03, P007/B03 & assign P017 a B03 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.046 ms \\
+78 & P013(P2, espera 18m), P011(P3, espera 33m), P010(P4, espera 33m), P015(P4, espera 18m), P016(P4, espera 3m), P018(P4, espera 3m), P007(P5, espera 48m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.041 ms \\
+82 & P013(P2, espera 22m), P011(P3, espera 37m), P010(P4, espera 37m), P015(P4, espera 22m), P016(P4, espera 7m), P018(P4, espera 7m), P007(P5, espera 52m) & B02 & P013/B02, P011/B02, P010/B02, P015/B02, P007/B02 & assign P013 a B02 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.042 ms \\
+82 & P011(P3, espera 37m), P010(P4, espera 37m), P015(P4, espera 22m), P016(P4, espera 7m), P018(P4, espera 7m), P007(P5, espera 52m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.037 ms \\
+91 & P011(P3, espera 46m), P010(P4, espera 46m), P015(P4, espera 31m), P016(P4, espera 16m), P018(P4, espera 16m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.035 ms \\
+101 & P011(P3, espera 56m), P010(P4, espera 56m), P015(P4, espera 41m), P016(P4, espera 26m), P018(P4, espera 26m) & B01 & P011/B01, P015/B01 & assign P011 a B01 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.081 ms \\
+101 & P010(P4, espera 56m), P015(P4, espera 41m), P016(P4, espera 26m), P018(P4, espera 26m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.107 ms \\
+102 & P010(P4, espera 57m), P015(P4, espera 42m), P016(P4, espera 27m), P018(P4, espera 27m) & B03 & P015/B03, P016/B03, P018/B03 & assign P018 a B03 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.156 ms \\
+102 & P010(P4, espera 57m), P015(P4, espera 42m), P016(P4, espera 27m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.120 ms \\
+106 & P015(P4, espera 46m), P016(P4, espera 31m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.044 ms \\
+121 & P016(P4, espera 46m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.017 ms \\
+122 & P016(P4, espera 47m) & B03 & P016/B03 & assign P016 a B03 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.015 ms \\
+122 & vacía & ninguno & ninguno & wait & La cola elegible está vacía.; sin transición; 0.002 ms \\
+130 & vacía & B02 & ninguno & wait & La cola elegible está vacía.; sin transición; 0.001 ms \\
+136 & vacía & B02 & ninguno & wait & La cola elegible está vacía.; sin transición; 0.001 ms \\
+143 & vacía & B01, B02 & ninguno & wait & La cola elegible está vacía.; sin transición; 0.001 ms \\
+162 & vacía & B01, B02, B03 & ninguno & wait & La cola elegible está vacía.; sin transición; 0.001 ms \\
+\bottomrule
+\end{longtable}
+
+\paragraph{Secuencia completa de eventos}
+\begin{longtable}{r p{2.2cm} p{4.2cm}}
+\toprule t & Evento & Entidad / transición \\
+\midrule\endfirsthead
+\toprule t & Evento & Entidad / transición \\
+\midrule\endhead
+0 & eligible & patient\_id=P001 \\
+0 & eligible & patient\_id=P002 \\
+0 & eligible & patient\_id=P003 \\
+0 & assigned & patient\_id=P002, box\_id=B01 \\
+0 & assigned & patient\_id=P003, box\_id=B03 \\
+0 & clock\_advanced & to=15 \\
+15 & eligible & patient\_id=P004 \\
+15 & eligible & patient\_id=P005 \\
+15 & eligible & patient\_id=P006 \\
+15 & assigned & patient\_id=P006, box\_id=B02 \\
+15 & clock\_advanced & to=30 \\
+30 & eligible & patient\_id=P007 \\
+30 & eligible & patient\_id=P008 \\
+30 & eligible & patient\_id=P009 \\
+30 & clock\_advanced & to=36 \\
+36 & box\_released & patient\_id=P002, box\_id=B01 \\
+36 & assigned & patient\_id=P009, box\_id=B01 \\
+36 & clock\_advanced & to=43 \\
+43 & box\_released & patient\_id=P003, box\_id=B03 \\
+43 & assigned & patient\_id=P001, box\_id=B03 \\
+43 & clock\_advanced & to=45 \\
+45 & eligible & patient\_id=P010 \\
+45 & eligible & patient\_id=P011 \\
+45 & eligible & patient\_id=P012 \\
+45 & clock\_advanced & to=56 \\
+56 & box\_released & patient\_id=P006, box\_id=B02 \\
+56 & assigned & patient\_id=P012, box\_id=B02 \\
+56 & clock\_advanced & to=60 \\
+60 & eligible & patient\_id=P013 \\
+60 & eligible & patient\_id=P014 \\
+60 & eligible & patient\_id=P015 \\
+60 & clock\_advanced & to=61 \\
+61 & clock\_advanced & to=75 \\
+75 & eligible & patient\_id=P016 \\
+75 & eligible & patient\_id=P017 \\
+75 & eligible & patient\_id=P018 \\
+75 & box\_released & patient\_id=P012, box\_id=B02 \\
+75 & assigned & patient\_id=P013, box\_id=B02 \\
+75 & clock\_advanced & to=76 \\
+76 & abandoned & patient\_id=P004 \\
+76 & abandoned & patient\_id=P005 \\
+76 & clock\_advanced & to=84 \\
+84 & box\_released & patient\_id=P001, box\_id=B03 \\
+84 & assigned & patient\_id=P014, box\_id=B03 \\
+84 & clock\_advanced & to=91 \\
+91 & abandoned & patient\_id=P007 \\
+91 & abandoned & patient\_id=P008 \\
+91 & box\_released & patient\_id=P014, box\_id=B03 \\
+91 & assigned & patient\_id=P017, box\_id=B03 \\
+91 & clock\_advanced & to=101 \\
+101 & box\_released & patient\_id=P009, box\_id=B01 \\
+101 & assigned & patient\_id=P011, box\_id=B01 \\
+101 & clock\_advanced & to=106 \\
+106 & abandoned & patient\_id=P010 \\
+106 & clock\_advanced & to=115 \\
+115 & box\_released & patient\_id=P017, box\_id=B03 \\
+115 & assigned & patient\_id=P015, box\_id=B03 \\
+115 & clock\_advanced & to=121 \\
+121 & clock\_advanced & to=123 \\
+123 & box\_released & patient\_id=P013, box\_id=B02 \\
+123 & clock\_advanced & to=136 \\
+136 & abandoned & patient\_id=P016 \\
+136 & abandoned & patient\_id=P018 \\
+136 & clock\_advanced & to=143 \\
+143 & box\_released & patient\_id=P011, box\_id=B01 \\
+143 & clock\_advanced & to=151 \\
+151 & box\_released & patient\_id=P015, box\_id=B03 \\
+151 & clock\_advanced & to=240 \\
+\bottomrule
+\end{longtable}
+
+\subsection{T114: caso desfavorable}
+Ejemplo ilustrativo seleccionado por el mayor aumento de espera primaria observado: 68,611 a 82,833 min (+14,222 min).
+\begin{longtable}{r p{3.0cm} p{1.25cm} p{2.7cm} p{2.0cm} p{2.4cm}}
+\caption{Traza de decisiones de T114}\label{tab:trace_t114}\\
+\toprule t & Cola elegible (prioridad, espera) & Boxes libres & Pares factibles & Acción & Comentario / evento \\
+\midrule\endfirsthead
+\toprule t & Cola elegible (prioridad, espera) & Boxes libres & Pares factibles & Acción & Comentario / evento \\
+\midrule\endhead
+0 & P002(P2, espera 0m), P003(P3, espera 0m), P001(P4, espera 0m) & B01, B02, B03 & P002/B02, P003/B02, P001/B03 & assign P002 a B02 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.045 ms \\
+0 & P003(P3, espera 0m), P001(P4, espera 0m) & B01, B03 & P001/B03 & assign P001 a B03 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.029 ms \\
+0 & P003(P3, espera 0m) & B01 & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.019 ms \\
+13 & P003(P3, espera 13m) & B01, B02 & P003/B02 & assign P003 a B02 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.015 ms \\
+13 & vacía & B01 & ninguno & wait & La cola elegible está vacía.; sin transición; 0.002 ms \\
+15 & P006(P1, espera 0m), P004(P2, espera 0m), P005(P4, espera 0m) & B01 & P005/B01 & assign P005 a B01 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.032 ms \\
+15 & P006(P1, espera 0m), P004(P2, espera 0m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.025 ms \\
+30 & P006(P1, espera 15m), P008(P1, espera 0m), P004(P2, espera 15m), P007(P4, espera 0m), P009(P4, espera 0m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.040 ms \\
+42 & P006(P1, espera 27m), P008(P1, espera 12m), P004(P2, espera 27m), P007(P4, espera 12m), P009(P4, espera 12m) & B02, B03 & P006/B02, P008/B03, P004/B03, P007/B02, P007/B03, P009/B02, P009/B03 & assign P006 a B02 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.077 ms \\
+42 & P008(P1, espera 12m), P004(P2, espera 27m), P007(P4, espera 12m), P009(P4, espera 12m) & B03 & P008/B03, P004/B03, P007/B03, P009/B03 & assign P008 a B03 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.049 ms \\
+42 & P004(P2, espera 27m), P007(P4, espera 12m), P009(P4, espera 12m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.045 ms \\
+45 & P004(P2, espera 30m), P010(P3, espera 0m), P007(P4, espera 15m), P009(P4, espera 15m), P011(P4, espera 0m), P012(P4, espera 0m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.062 ms \\
+60 & P013(P1, espera 0m), P004(P2, espera 45m), P010(P3, espera 15m), P007(P4, espera 30m), P009(P4, espera 30m), P011(P4, espera 15m), P012(P4, espera 15m), P014(P4, espera 0m), P015(P4, espera 0m) & B03 & P004/B03, P007/B03, P009/B03, P011/B03, P012/B03, P014/B03, P015/B03 & assign P004 a B03 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.273 ms \\
+60 & P013(P1, espera 0m), P010(P3, espera 15m), P007(P4, espera 30m), P009(P4, espera 30m), P011(P4, espera 15m), P012(P4, espera 15m), P014(P4, espera 0m), P015(P4, espera 0m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.508 ms \\
+61 & P013(P1, espera 1m), P010(P3, espera 16m), P007(P4, espera 31m), P009(P4, espera 31m), P011(P4, espera 16m), P012(P4, espera 16m), P014(P4, espera 1m), P015(P4, espera 1m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.331 ms \\
+65 & P013(P1, espera 5m), P010(P3, espera 20m), P007(P4, espera 35m), P009(P4, espera 35m), P011(P4, espera 20m), P012(P4, espera 20m), P014(P4, espera 5m), P015(P4, espera 5m) & B01 & P007/B01, P009/B01, P014/B01, P015/B01 & assign P007 a B01 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.546 ms \\
+65 & P013(P1, espera 5m), P010(P3, espera 20m), P009(P4, espera 35m), P011(P4, espera 20m), P012(P4, espera 20m), P014(P4, espera 5m), P015(P4, espera 5m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.187 ms \\
+75 & P013(P1, espera 15m), P016(P2, espera 0m), P018(P2, espera 0m), P010(P3, espera 30m), P017(P3, espera 0m), P009(P4, espera 45m), P011(P4, espera 30m), P012(P4, espera 30m), P014(P4, espera 15m), P015(P4, espera 15m) & B03 & P016/B03, P018/B03, P017/B03, P009/B03, P011/B03, P012/B03, P014/B03, P015/B03 & assign P018 a B03 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.117 ms \\
+75 & P013(P1, espera 15m), P016(P2, espera 0m), P010(P3, espera 30m), P017(P3, espera 0m), P009(P4, espera 45m), P011(P4, espera 30m), P012(P4, espera 30m), P014(P4, espera 15m), P015(P4, espera 15m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.053 ms \\
+76 & P013(P1, espera 16m), P016(P2, espera 1m), P010(P3, espera 31m), P017(P3, espera 1m), P009(P4, espera 46m), P011(P4, espera 31m), P012(P4, espera 31m), P014(P4, espera 16m), P015(P4, espera 16m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.051 ms \\
+85 & P013(P1, espera 25m), P016(P2, espera 10m), P010(P3, espera 40m), P017(P3, espera 10m), P009(P4, espera 55m), P011(P4, espera 40m), P012(P4, espera 40m), P014(P4, espera 25m), P015(P4, espera 25m) & B01 & P016/B01, P009/B01, P014/B01, P015/B01 & assign P016 a B01 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.053 ms \\
+85 & P013(P1, espera 25m), P010(P3, espera 40m), P017(P3, espera 10m), P009(P4, espera 55m), P011(P4, espera 40m), P012(P4, espera 40m), P014(P4, espera 25m), P015(P4, espera 25m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.053 ms \\
+89 & P013(P1, espera 29m), P010(P3, espera 44m), P017(P3, espera 14m), P009(P4, espera 59m), P011(P4, espera 44m), P012(P4, espera 44m), P014(P4, espera 29m), P015(P4, espera 29m) & B02 & P013/B02, P010/B02, P009/B02, P014/B02, P015/B02 & assign P013 a B02 & Primera asignación del plan de menor costo estimado.; assignment\_executed; 0.065 ms \\
+89 & P010(P3, espera 44m), P017(P3, espera 14m), P009(P4, espera 59m), P011(P4, espera 44m), P012(P4, espera 44m), P014(P4, espera 29m), P015(P4, espera 29m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.071 ms \\
+91 & P010(P3, espera 46m), P017(P3, espera 16m), P011(P4, espera 46m), P012(P4, espera 46m), P014(P4, espera 31m), P015(P4, espera 31m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.050 ms \\
+106 & P017(P3, espera 31m), P014(P4, espera 46m), P015(P4, espera 46m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.042 ms \\
+121 & P017(P3, espera 46m) & ninguno & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.022 ms \\
+122 & P017(P3, espera 47m) & B02 & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.021 ms \\
+133 & P017(P3, espera 58m) & B01, B02 & ninguno & wait & La búsqueda recomienda esperar al siguiente evento.; sin transición; 0.017 ms \\
+136 & vacía & B01, B02 & ninguno & wait & La cola elegible está vacía.; sin transición; 0.002 ms \\
+147 & vacía & B01, B02, B03 & ninguno & wait & La cola elegible está vacía.; sin transición; 0.001 ms \\
+\bottomrule
+\end{longtable}
+
+\paragraph{Secuencia completa de eventos}
+\begin{longtable}{r p{2.2cm} p{4.2cm}}
+\toprule t & Evento & Entidad / transición \\
+\midrule\endfirsthead
+\toprule t & Evento & Entidad / transición \\
+\midrule\endhead
+0 & eligible & patient\_id=P001 \\
+0 & eligible & patient\_id=P002 \\
+0 & eligible & patient\_id=P003 \\
+0 & assigned & patient\_id=P002, box\_id=B02 \\
+0 & assigned & patient\_id=P001, box\_id=B03 \\
+0 & clock\_advanced & to=13 \\
+13 & box\_released & patient\_id=P002, box\_id=B02 \\
+13 & assigned & patient\_id=P003, box\_id=B02 \\
+13 & clock\_advanced & to=15 \\
+15 & eligible & patient\_id=P004 \\
+15 & eligible & patient\_id=P005 \\
+15 & eligible & patient\_id=P006 \\
+15 & assigned & patient\_id=P005, box\_id=B01 \\
+15 & clock\_advanced & to=30 \\
+30 & eligible & patient\_id=P007 \\
+30 & eligible & patient\_id=P008 \\
+30 & eligible & patient\_id=P009 \\
+30 & clock\_advanced & to=42 \\
+42 & box\_released & patient\_id=P001, box\_id=B03 \\
+42 & box\_released & patient\_id=P003, box\_id=B02 \\
+42 & assigned & patient\_id=P006, box\_id=B02 \\
+42 & assigned & patient\_id=P008, box\_id=B03 \\
+42 & clock\_advanced & to=45 \\
+45 & eligible & patient\_id=P010 \\
+45 & eligible & patient\_id=P011 \\
+45 & eligible & patient\_id=P012 \\
+45 & clock\_advanced & to=60 \\
+60 & eligible & patient\_id=P013 \\
+60 & eligible & patient\_id=P014 \\
+60 & eligible & patient\_id=P015 \\
+60 & box\_released & patient\_id=P008, box\_id=B03 \\
+60 & assigned & patient\_id=P004, box\_id=B03 \\
+60 & clock\_advanced & to=61 \\
+61 & clock\_advanced & to=65 \\
+65 & box\_released & patient\_id=P005, box\_id=B01 \\
+65 & assigned & patient\_id=P007, box\_id=B01 \\
+65 & clock\_advanced & to=75 \\
+75 & eligible & patient\_id=P016 \\
+75 & eligible & patient\_id=P017 \\
+75 & eligible & patient\_id=P018 \\
+75 & box\_released & patient\_id=P004, box\_id=B03 \\
+75 & assigned & patient\_id=P016, box\_id=B03 \\
+75 & clock\_advanced & to=76 \\
+76 & clock\_advanced & to=85 \\
+85 & box\_released & patient\_id=P007, box\_id=B01 \\
+85 & assigned & patient\_id=P009, box\_id=B01 \\
+85 & clock\_advanced & to=89 \\
+89 & box\_released & patient\_id=P006, box\_id=B02 \\
+89 & assigned & patient\_id=P013, box\_id=B02 \\
+89 & clock\_advanced & to=91 \\
+91 & clock\_advanced & to=101 \\
+101 & box\_released & patient\_id=P009, box\_id=B01 \\
+101 & assigned & patient\_id=P014, box\_id=B01 \\
+101 & clock\_advanced & to=106 \\
+106 & abandoned & patient\_id=P010 \\
+106 & abandoned & patient\_id=P011 \\
+106 & abandoned & patient\_id=P012 \\
+106 & clock\_advanced & to=121 \\
+121 & abandoned & patient\_id=P015 \\
+121 & clock\_advanced & to=122 \\
+122 & box\_released & patient\_id=P013, box\_id=B02 \\
+122 & clock\_advanced & to=123 \\
+123 & box\_released & patient\_id=P016, box\_id=B03 \\
+123 & assigned & patient\_id=P018, box\_id=B03 \\
+123 & clock\_advanced & to=127 \\
+127 & box\_released & patient\_id=P014, box\_id=B01 \\
+127 & clock\_advanced & to=136 \\
+136 & abandoned & patient\_id=P017 \\
+136 & clock\_advanced & to=195 \\
+195 & box\_released & patient\_id=P018, box\_id=B03 \\
+195 & clock\_advanced & to=240 \\
+\bottomrule
+\end{longtable}
+
+\subsection{S11\_search\_timeout\_fallback: fallback por límite de búsqueda}
+Escenario diseñado para forzar timeout con límite configurado en cero; cada elección compatible usa la política reactiva segura.
+\begin{longtable}{r p{3.0cm} p{1.25cm} p{2.7cm} p{2.0cm} p{2.4cm}}
+\caption{Traza de decisiones de S11\_search\_timeout\_fallback}\label{tab:trace_s11_search_timeout_fallback}\\
+\toprule t & Cola elegible (prioridad, espera) & Boxes libres & Pares factibles & Acción & Comentario / evento \\
+\midrule\endfirsthead
+\toprule t & Cola elegible (prioridad, espera) & Boxes libres & Pares factibles & Acción & Comentario / evento \\
+\midrule\endhead
+0 & P01(P1, espera 0m), P02(P3, espera 0m) & B01 & P01/B01, P02/B01 & assign P01 a B01 & Límite de búsqueda alcanzado; acción segura de la política reactiva.; assignment\_executed; 0.007 ms \\
+0 & P02(P3, espera 0m) & ninguno & ninguno & wait & Límite de búsqueda alcanzado; acción segura de la política reactiva.; sin transición; 0.007 ms \\
+10 & P02(P3, espera 10m) & B01 & P02/B01 & assign P02 a B01 & Límite de búsqueda alcanzado; acción segura de la política reactiva.; assignment\_executed; 0.005 ms \\
+10 & vacía & ninguno & ninguno & wait & La cola elegible está vacía.; sin transición; 0.001 ms \\
+20 & vacía & B01 & ninguno & wait & La cola elegible está vacía.; sin transición; 0.001 ms \\
+31 & vacía & B01 & ninguno & wait & La cola elegible está vacía.; sin transición; 0.001 ms \\
+\bottomrule
+\end{longtable}
