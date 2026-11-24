@@ -9,7 +9,9 @@ a boxes.
 - Cohorte configurable de 100 pacientes, grupos etarios 18–39, 40–64 y 65+,
   categorías C1–C5 y grupos de causas. Los valores del fixture son sintéticos.
 - Llegadas a lo largo de 24 horas con máximo esperado a las 16:00; cuotas diarias
-  80% por medios propios, 5% ambulancia y 15% policía.
+  80% por medios propios, 5% ambulancia y 15% policía. Todo paciente C1 se
+  asigna a ambulancia; la configuración falla explícitamente si la cuota C1
+  supera las plazas de ambulancia disponibles.
 - Tras admisión, los pacientes esperan en la sala general para PriorIA o triage
   humano y ocupan una silla FIFO si hay disponibilidad. Al ser llamados a
   categorización, liberan la silla.
