@@ -13,7 +13,6 @@ import csv
 import json
 import math
 import random
-from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -57,8 +56,11 @@ def config_template() -> dict[str, Any]:
                 "traumatology": 4,
                 "surgery": 4
             },
-            "boxes": 18,
-            "waiting_chairs": 20
+            "consultation_boxes": 8,
+            "prioria_cabins": 5,
+            "general_waiting_chairs": 36,
+            "triage_c2_waiting_chairs": None,
+            "resuscitation_beds": 2
         },
         "abandonment": {
             "risk_intercept": -3.0,
