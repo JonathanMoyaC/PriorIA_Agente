@@ -44,7 +44,6 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
     boxes_free = int(resources["consultation_boxes"])
     box_nurses_free = int(resources.get("box_nurses", boxes_free))
     resuscitation_free = int(resources["resuscitation_beds"])
-    c2_treatment_nurses_free = int(resources["c2_treatment_nurses"])
 
     patients = {p["patient_id"]: {
         **p, "status": "not_arrived", "total_wait_minutes": 0,
@@ -204,7 +203,7 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
 
     def complete_care(event: dict[str, Any], minute: int) -> None:
         nonlocal boxes_free, box_nurses_free, resuscitation_free
-        nonlocal c2_treatment_nurses_free
+        nonlocal triage_busy_nurses
         patient_id = event["patient_id"]
         task = event["task"]
         resource = event["resource"]
@@ -217,8 +216,12 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
                 box_nurses_free += 1
         elif resource == "resuscitation":
             resuscitation_free += 1
-        elif resource == "c2_treatment_nurse":
-            c2_treatment_nurses_free += 1
+            if event.get("nurse_source") == "attention":
+                box_nurses_free += 1
+        elif resource == "attention_nurse":
+            box_nurses_free += 1
+        if event.get("nurse_source") == "triage_fallback":
+            triage_busy_nurses -= 1
         patients[patient_id]["stages_completed"] += 1
         log(minute, "care_stage_completed", patient_id, task=task,
             favorable=event.get("favorable"))
@@ -238,6 +241,22 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
                     disposition = "hospitalized" if rng.random() < probability else "discharged"
                     finish_patient(patient_id, minute, disposition,
                                    "sin_tratamiento_indicado")
+        elif task == "treatment_nursing":
+            low = int(care["treatment_duration_minutes"]["minimum"])
+            high = int(care["treatment_duration_minutes"]["maximum"])
+            if low < 30 or high > 120 or low > high:
+                raise ValueError("La duración de tratamiento debe quedar entre 30 y 120 minutos.")
+            duration = rng.randint(low, high)
+            p["status"] = "in_treatment_observation"
+            care_active.append({
+                "finish": minute + duration, "patient_id": patient_id,
+                "task": "treatment", "resource": "observation",
+                "specialty": None, "box_nurse": False,
+            })
+            log(minute, "treatment_observation_started", patient_id,
+                duration_minutes=duration,
+                treatment_number=p["treatments_received"] + 1,
+                room="c2")
         elif task == "treatment":
             p["treatments_received"] += 1
             areas.resume_after_treatment(patient_id, minute)
@@ -296,10 +315,16 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
             leave_pretriage(patient_id, minute, remove_from_triage_queue=False)
             if mode == "prioria":
                 prioria_busy += 1
-                duration = min(5, _duration(rng, triage["prioria_duration_minutes"]))
+                duration = rng.randint(
+                    int(triage["prioria_validation_minutes"]["minimum"]),
+                    int(triage["prioria_validation_minutes"]["maximum"]),
+                )
             else:
                 human_triage_busy += 1
-                duration = _duration(rng, triage["human_duration_minutes"])
+                duration = rng.randint(
+                    int(triage["human_categorization_minutes"]["minimum"]),
+                    int(triage["human_categorization_minutes"]["maximum"]),
+                )
             triage_busy_nurses += 1
             patients[patient_id]["status"] = "triage_in_progress"
             triage_active.append({"finish": minute + duration,
@@ -309,6 +334,7 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
 
     def dispatch_care(minute: int) -> None:
         nonlocal boxes_free, box_nurses_free, resuscitation_free
+        nonlocal triage_busy_nurses
         ordered = sorted(waiting, key=lambda pid: (
             int(patients[pid]["triage_category"][1]),
             waiting[pid]["entered"], waiting[pid]["sequence"], pid))
@@ -323,11 +349,21 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
             if task == "consult" and p["triage_category"] == "C1":
                 if resuscitation_free <= 0:
                     continue
+                nurse_source = None
+                if box_nurses_free > 0:
+                    box_nurses_free -= 1
+                    nurse_source = "attention"
+                elif triage_busy_nurses < int(resources["triage_nurses"]):
+                    triage_busy_nurses += 1
+                    nurse_source = "triage_fallback"
+                if nurse_source is None:
+                    continue
                 resource = "resuscitation"
             elif task in {"consult", "reevaluation"}:
                 if boxes_free <= 0 or box_nurses_free <= 0:
                     continue
                 resource = "box"
+                nurse_source = "attention"
             else:
                 continue
 
@@ -355,24 +391,25 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
                 "finish": minute + duration, "patient_id": patient_id,
                 "task": task, "resource": resource, "specialty": specialty,
                 "box_nurse": resource == "box",
+                "nurse_source": nurse_source if resource == "resuscitation" else None,
             })
             p["status"] = f"in_{task}"
             log(minute, "care_stage_started", patient_id, task=task,
                 specialty=specialty, resource=resource,
-                duration_minutes=duration)
+                duration_minutes=duration,
+                nurse_source=nurse_source if resource == "resuscitation" else None)
+            if resource == "resuscitation":
+                log(minute, "nurse_attended_c1", patient_id,
+                    nurse_source=nurse_source)
 
     def dispatch_treatments(minute: int) -> None:
-        nonlocal c2_treatment_nurses_free
+        nonlocal box_nurses_free
         order = sorted(
             (pid for pid, item in waiting.items() if item["task"] == "treatment"),
             key=lambda pid: (waiting[pid]["entered"], waiting[pid]["sequence"], pid),
         )
-        low = int(care["treatment_duration_minutes"]["minimum"])
-        high = int(care["treatment_duration_minutes"]["maximum"])
-        if low < 30 or high > 120 or low > high:
-            raise ValueError("La duración de tratamiento debe quedar entre 30 y 120 minutos.")
         for patient_id in order:
-            if c2_treatment_nurses_free <= 0 or patient_id not in waiting:
+            if box_nurses_free <= 0 or patient_id not in waiting:
                 break
             entry = waiting.pop(patient_id)
             p = patients[patient_id]
@@ -380,17 +417,21 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
             chair_before = areas.status(patient_id)[1]
             areas.pause_for_treatment(patient_id, minute)
             p["current_queue_entered"] = None
-            p["status"] = "in_treatment"
-            c2_treatment_nurses_free -= 1
-            duration = rng.randint(low, high)
+            p["status"] = "nurse_procedure"
+            box_nurses_free -= 1
+            nurse_low = int(care["treatment_nurse_minutes"]["minimum"])
+            nurse_high = int(care["treatment_nurse_minutes"]["maximum"])
+            if nurse_low < 5 or nurse_high > 10 or nurse_low > nurse_high:
+                raise ValueError("La atención de enfermería debe quedar entre 5 y 10 minutos.")
+            duration = rng.randint(nurse_low, nurse_high)
             care_active.append({
                 "finish": minute + duration, "patient_id": patient_id,
-                "task": "treatment", "resource": "c2_treatment_nurse",
+                "task": "treatment_nursing", "resource": "attention_nurse",
                 "specialty": None, "box_nurse": False,
             })
-            log(minute, "treatment_started_by_nurse", patient_id,
+            log(minute, "treatment_nurse_procedure_started", patient_id,
                 room="c2", chair_state=chair_before,
-                duration_minutes=duration,
+                duration_minutes=duration, nurse_source="attention",
                 treatment_number=p["treatments_received"] + 1)
 
     for minute in range(max_time + 1):
@@ -496,7 +537,7 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
         "arrival_mode_counts": {mode: sum(p["arrival_mode"] == mode
                                             for p in patients.values())
                                 for mode in ("own_means", "ambulance", "police")},
-        "treatments_started": sum(r["event"] == "treatment_started_by_nurse" for r in trace),
+        "treatments_started": sum(r["event"] == "treatment_observation_started" for r in trace),
         "treatment_failures": sum(r["event"] == "treatment_failed" for r in trace),
         "mean_total_wait_minutes": round(sum(total_waits) / len(total_waits), 2) if total_waits else 0,
         "mean_arrival_to_triage_minutes": round(
