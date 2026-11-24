@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""FIFO seating and standing status for the PriorIA V2 general waiting room.
+"""FIFO chair allocation for PriorIA V2's separate emergency waiting rooms.
 
-The room is modeled separately from the triage waiting area (C2), PriorIA cabins,
-consultation boxes, and resuscitation beds. Seats are allocated in order of entry
-to the general waiting queue. A released seat is assigned immediately to the
-oldest active standing patient.
+C2/C3 patients enter the C2 room; C4/C5 patients enter the general room; C1
+patients go to resuscitation. Each waiting room has its own chair capacity and
+FIFO queue. PriorIA cabins, boxes, and resuscitation beds are modeled separately.
 """
 from __future__ import annotations
 
@@ -22,7 +21,7 @@ class WaitingPatient:
 
 
 class GeneralWaitingRoom:
-    """Manage a fixed number of general-room chairs with strict FIFO allocation."""
+    """Manage fixed waiting-room chairs with strict FIFO allocation."""
 
     def __init__(self, chair_capacity: int = 36) -> None:
         if chair_capacity < 0:
@@ -133,5 +132,58 @@ class GeneralWaitingRoom:
         return len(self._active)
 
 
+
+class WaitingAreas:
+    """Route patients to independent waiting rooms and expose their chair states.
+
+    Routing follows the agreed initial structure: C1 to resuscitation, C2/C3 to
+    the dedicated C2 room, and C4/C5 to the general waiting room.
+    """
+
+    def __init__(self, general_chairs: int = 36, c2_chairs: int = 24) -> None:
+        self.general = GeneralWaitingRoom(general_chairs)
+        self.c2 = GeneralWaitingRoom(c2_chairs)
+        self._patient_rooms: dict[str, str] = {}
+
+    @staticmethod
+    def route(triage_category: str) -> str:
+        routes = {
+            "C1": "resuscitation",
+            "C2": "c2",
+            "C3": "c2",
+            "C4": "general",
+            "C5": "general",
+        }
+        try:
+            return routes[triage_category]
+        except KeyError as error:
+            raise ValueError(f"Categoría de triage inválida: {triage_category}") from error
+
+    def arrive(self, patient: WaitingPatient) -> tuple[str, bool | None]:
+        """Route a patient; return (area, seated), with None for C1."""
+        area = self.route(patient.triage_category)
+        if area == "resuscitation":
+            return area, None
+        room = self.c2 if area == "c2" else self.general
+        seated = room.arrive(patient)
+        self._patient_rooms[patient.patient_id] = area
+        return area, seated
+
+    def leave(self, patient_id: str) -> tuple[str, str | None]:
+        """Remove a waiting patient and return (area, newly seated patient ID)."""
+        if patient_id not in self._patient_rooms:
+            raise KeyError(f"Paciente no está en una sala de espera: {patient_id}")
+        area = self._patient_rooms.pop(patient_id)
+        room = self.c2 if area == "c2" else self.general
+        return area, room.leave(patient_id)
+
+    def status(self, patient_id: str) -> tuple[str, str]:
+        if patient_id not in self._patient_rooms:
+            return "left", "left"
+        area = self._patient_rooms[patient_id]
+        room = self.c2 if area == "c2" else self.general
+        return area, room.status(patient_id)
+
+
 if __name__ == "__main__":
-    print("Sala general PriorIA V2: capacidad configurable (por defecto 36 sillas), FIFO.")
+    print("PriorIA V2: sala general (36) y sala C2 (24), con asignación FIFO independiente.")
