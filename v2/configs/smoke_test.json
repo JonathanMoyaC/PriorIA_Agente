@@ -1,0 +1,163 @@
+{
+  "scenario_id": "v2_synthetic_smoke_100",
+  "seed": 20261124,
+  "daily_patients": 100,
+  "age_group_probabilities": {
+    "adult_young": 0.30,
+    "adult_middle": 0.45,
+    "adult_older": 0.25
+  },
+  "triage_category_probabilities": {
+    "C1": 0.02,
+    "C2": 0.12,
+    "C3": 0.36,
+    "C4": 0.33,
+    "C5": 0.17
+  },
+  "deis_cause_probabilities_by_age": {
+    "adult_young": {
+      "thoracic_pain": 0.10,
+      "respiratory_difficulty": 0.10,
+      "abdominal_pain": 0.12,
+      "trauma_fall": 0.18,
+      "wound_bleeding": 0.10,
+      "neurological_dizziness_syncope": 0.12,
+      "fever_infection": 0.10,
+      "gastrointestinal_urinary": 0.18
+    },
+    "adult_middle": {
+      "thoracic_pain": 0.15,
+      "respiratory_difficulty": 0.12,
+      "abdominal_pain": 0.13,
+      "trauma_fall": 0.14,
+      "wound_bleeding": 0.10,
+      "neurological_dizziness_syncope": 0.10,
+      "fever_infection": 0.10,
+      "gastrointestinal_urinary": 0.16
+    },
+    "adult_older": {
+      "thoracic_pain": 0.14,
+      "respiratory_difficulty": 0.16,
+      "abdominal_pain": 0.14,
+      "trauma_fall": 0.12,
+      "wound_bleeding": 0.07,
+      "neurological_dizziness_syncope": 0.13,
+      "fever_infection": 0.12,
+      "gastrointestinal_urinary": 0.12
+    }
+  },
+  "arrival": {
+    "profile": "gaussian_peak",
+    "peak_hour": 16,
+    "sigma_hours": 4.0,
+    "baseline": 0.15,
+    "arrival_mode_shares": {
+      "own_means": 0.80,
+      "ambulance": 0.05,
+      "police": 0.15
+    },
+    "mode_preference_weights_by_age": {
+      "adult_young": {"own_means": 8, "ambulance": 1, "police": 2},
+      "adult_middle": {"own_means": 5, "ambulance": 1, "police": 2},
+      "adult_older": {"own_means": 2, "ambulance": 5, "police": 2}
+    },
+    "prioria_use_probability_by_age": {
+      "adult_young": 0.80,
+      "adult_middle": 0.50,
+      "adult_older": 0.20
+    }
+  },
+  "resources": {
+    "physicians_by_specialty": {
+      "internal_medicine": 4,
+      "traumatology": 4,
+      "surgery": 4
+    },
+    "box_nurses": 8,
+    "consultation_boxes": 8,
+    "prioria_cabins": 5,
+    "general_waiting_chairs": 36,
+    "c2_waiting_chairs": 24,
+    "resuscitation_beds": 2,
+    "triage_stations": 2,
+    "triage_nurses": 3,
+    "procedure_slots": 2,
+    "observation_beds": 4
+  },
+  "triage": {
+    "prioria_duration_minutes": {"mean": 4.0, "sd": 0.5},
+    "human_duration_minutes": {"mean": 10.0, "sd": 2.0}
+  },
+  "care": {
+    "consultation_minutes_by_category": {
+      "C1": {"mean": 60, "sd": 7.5},
+      "C2": {"mean": 45, "sd": 7.5},
+      "C3": {"mean": 30, "sd": 7.5},
+      "C4": {"mean": 20, "sd": 5.0},
+      "C5": {"mean": 15, "sd": 5.0}
+    },
+    "procedure_probability_by_cause": {
+      "thoracic_pain": 0.20,
+      "respiratory_difficulty": 0.15,
+      "abdominal_pain": 0.35,
+      "trauma_fall": 0.60,
+      "wound_bleeding": 0.55,
+      "neurological_dizziness_syncope": 0.15,
+      "fever_infection": 0.10,
+      "gastrointestinal_urinary": 0.20
+    },
+    "observation_probability_by_cause": {
+      "thoracic_pain": 0.35,
+      "respiratory_difficulty": 0.45,
+      "abdominal_pain": 0.25,
+      "trauma_fall": 0.10,
+      "wound_bleeding": 0.05,
+      "neurological_dizziness_syncope": 0.35,
+      "fever_infection": 0.40,
+      "gastrointestinal_urinary": 0.20
+    },
+    "observation_after_procedure_probability": 0.50,
+    "procedure_favorable_probability": 0.85,
+    "observation_favorable_probability": 0.90,
+    "second_procedure_favorable_probability": 0.80,
+    "procedure_duration_minutes": {"mean": 30, "sd": 10},
+    "observation_duration_minutes": {"mean": 60, "sd": 15},
+    "hospitalization_probability_after_care": 0.20
+  },
+  "specialty_by_cause": {
+    "thoracic_pain": "internal_medicine",
+    "respiratory_difficulty": "internal_medicine",
+    "abdominal_pain": "surgery",
+    "trauma_fall": "traumatology",
+    "wound_bleeding": "surgery",
+    "neurological_dizziness_syncope": "internal_medicine",
+    "fever_infection": "internal_medicine",
+    "gastrointestinal_urinary": "internal_medicine"
+  },
+  "abandonment": {
+    "risk_intercept": -3.0,
+    "beta_wait": 1.25,
+    "wait_scale_minutes": 60.0,
+    "beta_low_acuity": 1.0,
+    "beta_standing": 0.8,
+    "age_effect": {
+      "adult_young": 0.35,
+      "adult_middle": 0.0,
+      "adult_older": -0.3
+    },
+    "threshold_range": [0.55, 0.75]
+  },
+  "max_simulation_minutes": 10080,
+  "metadata": {
+    "deis_category_source": "NO CALIBRADO: pesos sintéticos para prueba mecánica",
+    "deis_cause_source": "NO CALIBRADO: pesos sintéticos para prueba mecánica",
+    "hourly_arrival_source": "Supuesto de prueba: curva unimodal con máximo a las 16:00",
+    "deis_values_verified": false,
+    "test_fixture": true,
+    "assumption_notes": [
+      "Fixture exclusivamente sintético para validar el motor; no representa una estimación DEIS ni prevalencias clínicas.",
+      "Probabilidades de procedimientos, observación y evolución son supuestos de prueba configurables, no recomendaciones clínicas.",
+      "Uso de PriorIA por edad y capacidad de observación/procedimientos aún requieren validación local."
+    ]
+  }
+}
