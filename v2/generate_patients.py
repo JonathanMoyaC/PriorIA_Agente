@@ -100,13 +100,12 @@ def config_template() -> dict[str, Any]:
             "resuscitation_beds": 2,
             "admission_desks": 2,
             "triage_stations": 2,
-            "triage_nurses": 3,
-            "c2_treatment_nurses": 1
+            "triage_nurses": 3
         },
         "admission": {"duration_minutes": {"mean": 2, "sd": 0.5}},
         "triage": {
-            "prioria_duration_minutes": {"mean": 4, "sd": 0.5},
-            "human_duration_minutes": {"mean": 10, "sd": 2}
+            "prioria_validation_minutes": {"minimum": 1, "maximum": 5},
+            "human_categorization_minutes": {"minimum": 10, "maximum": 15}
         },
         "care": {
             "consultation_minutes_by_category": {
@@ -120,6 +119,7 @@ def config_template() -> dict[str, Any]:
                 "C1": 0.90, "C2": 0.80, "C3": 0.55, "C4": 0.0, "C5": 0.0
             },
             "treatment_duration_minutes": {"minimum": 30, "maximum": 120},
+            "treatment_nurse_minutes": {"minimum": 5, "maximum": 10},
             "reevaluation_discharge_probability": 0.70,
             "max_treatment_failures_before_hospitalization": 2,
             "hospitalization_probability_without_treatment_by_category": {
