@@ -96,3 +96,15 @@ uvicorn main:app --reload
 
 La API permite explorar configuraciones sintéticas; las corridas confirmatorias
 deben usar el manifiesto versionado y el ejecutor experimental.
+
+## Escenarios de límites de seguridad
+
+Ejecuta los diez escenarios de borde, por separado de las jornadas estadísticas:
+
+```bash
+python run_safety_scenarios.py
+```
+
+Guarda los resultados y las trazas en `outputs/safety/`. Estos casos cubren
+prioridad, compatibilidad, abandono, liberación de boxes, tiempos de espera y
+cierre del horizonte.

@@ -1,0 +1,31 @@
+scenario_id,description,policy,status,violations,patients_eligible,assigned,abandoned,not_assigned_at_horizon,invalid_assignment_attempts_rejected,executed_incompatible_assignments
+S01_priority_order,Higher-priority patient is assigned before a lower-priority patient.,fixed_pipeline,PASS,,2,2,0,0,0,0
+S01_priority_order,Higher-priority patient is assigned before a lower-priority patient.,reactive,PASS,,2,2,0,0,0,0
+S01_priority_order,Higher-priority patient is assigned before a lower-priority patient.,prioria_beam,PASS,,2,2,0,0,0,0
+S02_incompatible_high_priority,A high-priority patient with no compatible free box does not block a feasible patient.,fixed_pipeline,PASS,,2,1,1,0,0,0
+S02_incompatible_high_priority,A high-priority patient with no compatible free box does not block a feasible patient.,reactive,PASS,,2,1,1,0,0,0
+S02_incompatible_high_priority,A high-priority patient with no compatible free box does not block a feasible patient.,prioria_beam,PASS,,2,1,1,0,0,0
+S03_no_compatible_box,An incompatible patient remains safely unassigned through the episode horizon.,fixed_pipeline,PASS,,1,0,0,1,0,0
+S03_no_compatible_box,An incompatible patient remains safely unassigned through the episode horizon.,reactive,PASS,,1,0,0,1,0,0
+S03_no_compatible_box,An incompatible patient remains safely unassigned through the episode horizon.,prioria_beam,PASS,,1,0,0,1,0,0
+S04_empty_queue,An empty episode terminates without a policy decision or assignment.,fixed_pipeline,PASS,,0,0,0,0,0,0
+S04_empty_queue,An empty episode terminates without a policy decision or assignment.,reactive,PASS,,0,0,0,0,0,0
+S04_empty_queue,An empty episode terminates without a policy decision or assignment.,prioria_beam,PASS,,0,0,0,0,0,0
+S05_abandon_after_threshold,A patient abandons one minute after exceeding the patience threshold.,fixed_pipeline,PASS,,1,0,1,0,0,0
+S05_abandon_after_threshold,A patient abandons one minute after exceeding the patience threshold.,reactive,PASS,,1,0,1,0,0,0
+S05_abandon_after_threshold,A patient abandons one minute after exceeding the patience threshold.,prioria_beam,PASS,,1,0,1,0,0,0
+S06_box_release,A waiting patient can use a box after its service event releases it.,fixed_pipeline,PASS,,2,2,0,0,0,0
+S06_box_release,A waiting patient can use a box after its service event releases it.,reactive,PASS,,2,2,0,0,0,0
+S06_box_release,A waiting patient can use a box after its service event releases it.,prioria_beam,PASS,,2,2,0,0,0,0
+S07_expected_release_is_stale,A busy box is not used even if its expected release estimate has passed.,fixed_pipeline,PASS,,2,2,0,0,0,0
+S07_expected_release_is_stale,A busy box is not used even if its expected release estimate has passed.,reactive,PASS,,2,2,0,0,0,0
+S07_expected_release_is_stale,A busy box is not used even if its expected release estimate has passed.,prioria_beam,PASS,,2,2,0,0,0,0
+S08_patience_boundary,A patient at the exact patience threshold remains eligible for assignment.,fixed_pipeline,PASS,,2,2,0,0,0,0
+S08_patience_boundary,A patient at the exact patience threshold remains eligible for assignment.,reactive,PASS,,2,2,0,0,0,0
+S08_patience_boundary,A patient at the exact patience threshold remains eligible for assignment.,prioria_beam,PASS,,2,2,0,0,0,0
+S09_horizon_boundary,"An arrival at the horizon is recorded as unassigned at horizon, not assigned after closure.",fixed_pipeline,PASS,,1,0,0,1,0,0
+S09_horizon_boundary,"An arrival at the horizon is recorded as unassigned at horizon, not assigned after closure.",reactive,PASS,,1,0,0,1,0,0
+S09_horizon_boundary,"An arrival at the horizon is recorded as unassigned at horizon, not assigned after closure.",prioria_beam,PASS,,1,0,0,1,0,0
+S10_specialized_box_preserved,"A monitoring-only patient uses the specialized box, leaving the basic box available.",fixed_pipeline,PASS,,2,2,0,0,0,0
+S10_specialized_box_preserved,"A monitoring-only patient uses the specialized box, leaving the basic box available.",reactive,PASS,,2,2,0,0,0,0
+S10_specialized_box_preserved,"A monitoring-only patient uses the specialized box, leaving the basic box available.",prioria_beam,PASS,,2,2,0,0,0,0
