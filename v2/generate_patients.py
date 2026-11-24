@@ -24,6 +24,36 @@ AGE_RANGES = {
 CATEGORIES = ("C1", "C2", "C3", "C4", "C5")
 ARRIVAL_MODES = ("own_means", "ambulance", "police")
 
+COMPLAINTS_BY_CAUSE = {
+    "thoracic_pain": ("dolor torácico", "opresión en el pecho", "dolor precordial"),
+    "respiratory_difficulty": ("dificultad respiratoria", "tos y falta de aire", "sensación de ahogo"),
+    "abdominal_pain": ("dolor abdominal", "dolor en fosa iliaca", "dolor abdominal agudo"),
+    "trauma_fall": ("caída", "traumatismo", "dolor tras accidente"),
+    "wound_bleeding": ("herida", "sangrado", "corte"),
+    "neurological_dizziness_syncope": ("mareo", "desmayo", "debilidad o alteración neurológica"),
+    "fever_infection": ("fiebre", "malestar general", "síntomas de infección"),
+    "gastrointestinal_urinary": ("náuseas o vómitos", "dolor urinario", "síntomas gastrointestinales"),
+}
+
+DEFAULT_VITALS_BY_CATEGORY = {
+    "C1": {"heart_rate": {"mean": 125, "sd": 22}, "respiratory_rate": {"mean": 30, "sd": 7}, "temperature_c": {"mean": 37.6, "sd": 1.5}, "spo2_pct": {"mean": 89, "sd": 7}, "systolic_bp": {"mean": 95, "sd": 22}, "diastolic_bp": {"mean": 60, "sd": 15}},
+    "C2": {"heart_rate": {"mean": 110, "sd": 20}, "respiratory_rate": {"mean": 24, "sd": 6}, "temperature_c": {"mean": 37.3, "sd": 1.4}, "spo2_pct": {"mean": 93, "sd": 5}, "systolic_bp": {"mean": 115, "sd": 25}, "diastolic_bp": {"mean": 70, "sd": 15}},
+    "C3": {"heart_rate": {"mean": 94, "sd": 18}, "respiratory_rate": {"mean": 20, "sd": 5}, "temperature_c": {"mean": 37.1, "sd": 1.2}, "spo2_pct": {"mean": 96, "sd": 3}, "systolic_bp": {"mean": 125, "sd": 22}, "diastolic_bp": {"mean": 78, "sd": 14}},
+    "C4": {"heart_rate": {"mean": 84, "sd": 14}, "respiratory_rate": {"mean": 18, "sd": 4}, "temperature_c": {"mean": 37.0, "sd": 1.0}, "spo2_pct": {"mean": 97, "sd": 2}, "systolic_bp": {"mean": 128, "sd": 20}, "diastolic_bp": {"mean": 80, "sd": 12}},
+    "C5": {"heart_rate": {"mean": 78, "sd": 12}, "respiratory_rate": {"mean": 16, "sd": 3}, "temperature_c": {"mean": 36.8, "sd": 0.7}, "spo2_pct": {"mean": 98, "sd": 1.5}, "systolic_bp": {"mean": 130, "sd": 18}, "diastolic_bp": {"mean": 82, "sd": 10}},
+}
+
+CAUSE_VITAL_ADJUSTMENTS = {
+    "thoracic_pain": {"heart_rate": 5},
+    "respiratory_difficulty": {"respiratory_rate": 4, "spo2_pct": -4},
+    "abdominal_pain": {"heart_rate": 3},
+    "trauma_fall": {"heart_rate": 4},
+    "wound_bleeding": {"heart_rate": 8, "systolic_bp": -8},
+    "neurological_dizziness_syncope": {"systolic_bp": -3},
+    "fever_infection": {"temperature_c": 0.8, "heart_rate": 5},
+    "gastrointestinal_urinary": {"temperature_c": 0.2},
+}
+
 
 def config_template() -> dict[str, Any]:
     """Return an editable template; DEIS-derived values must be filled in."""
@@ -48,6 +78,11 @@ def config_template() -> dict[str, Any]:
                 "adult_young": {"own_means": 8, "ambulance": 1, "police": 2},
                 "adult_middle": {"own_means": 5, "ambulance": 1, "police": 2},
                 "adult_older": {"own_means": 2, "ambulance": 5, "police": 2}
+            },
+            "prioria_use_probability_by_age": {
+                "adult_young": 0.80,
+                "adult_middle": 0.50,
+                "adult_older": 0.20
             }
         },
         "resources": {
@@ -56,11 +91,49 @@ def config_template() -> dict[str, Any]:
                 "traumatology": 4,
                 "surgery": 4
             },
+            "box_nurses": 8,
             "consultation_boxes": 8,
             "prioria_cabins": 5,
             "general_waiting_chairs": 36,
             "c2_waiting_chairs": 24,
-            "resuscitation_beds": 2
+            "resuscitation_beds": 2,
+            "triage_stations": 2,
+            "triage_nurses": 3,
+            "procedure_slots": 2,
+            "observation_beds": 4
+        },
+        "care": {
+            "consultation_minutes_by_category": {
+                "C1": {"mean": 60, "sd": 7.5},
+                "C2": {"mean": 45, "sd": 7.5},
+                "C3": {"mean": 30, "sd": 7.5},
+                "C4": {"mean": 20, "sd": 5.0},
+                "C5": {"mean": 15, "sd": 5.0}
+            },
+            "procedure_probability_by_cause": {},
+            "observation_probability_by_cause": {},
+            "observation_after_procedure_probability": 0.50,
+            "procedure_favorable_probability": 0.85,
+            "observation_favorable_probability": 0.90,
+            "second_procedure_favorable_probability": 0.80,
+            "procedure_duration_minutes": {"mean": 30, "sd": 10},
+            "observation_duration_minutes": {"mean": 60, "sd": 15},
+            "hospitalization_probability_after_care": 0.20
+        },
+        "synthetic_profile": {
+            "vitals_by_category": DEFAULT_VITALS_BY_CATEGORY,
+            "cause_vital_adjustments": CAUSE_VITAL_ADJUSTMENTS,
+            "note": "Distribuciones de prueba configurables; no son signos vitales reales ni calibración DEIS."
+        },
+        "specialty_by_cause": {
+            "thoracic_pain": "internal_medicine",
+            "respiratory_difficulty": "internal_medicine",
+            "abdominal_pain": "surgery",
+            "trauma_fall": "traumatology",
+            "wound_bleeding": "surgery",
+            "neurological_dizziness_syncope": "internal_medicine",
+            "fever_infection": "internal_medicine",
+            "gastrointestinal_urinary": "internal_medicine"
         },
         "abandonment": {
             "risk_intercept": -3.0,
@@ -79,7 +152,11 @@ def config_template() -> dict[str, Any]:
             "deis_category_source": "PENDIENTE: completar fuente, año, territorio y denominador",
             "deis_cause_source": "PENDIENTE: completar fuente, año, territorio y denominador",
             "hourly_arrival_source": "Supuesto del escenario: perfil unimodal con máximo a las 16:00",
-            "deis_values_verified": False
+            "deis_values_verified": False,
+            "test_fixture": False,
+            "assumption_notes": [
+                "Uso de PriorIA por edad, capacidades de procedimientos y observación, desenlaces clínicos y hospitalización requieren calibración local."
+            ]
         }
     }
 
@@ -153,6 +230,26 @@ def constrained_arrival_modes(age_groups: list[str], shares: dict[str, float],
     return [str(mode) for mode in modes]
 
 
+def sample_vitals(category: str, cause_group: str, rng: random.Random,
+                  profile_config: dict[str, Any]) -> dict[str, float | int]:
+    """Sample illustrative vital signs; parameters must be locally calibrated."""
+    distributions = profile_config.get("vitals_by_category", DEFAULT_VITALS_BY_CATEGORY)
+    adjustments = profile_config.get("cause_vital_adjustments", CAUSE_VITAL_ADJUSTMENTS)
+    limits = {
+        "heart_rate": (35, 220), "respiratory_rate": (6, 60),
+        "temperature_c": (32, 43), "spo2_pct": (50, 100),
+        "systolic_bp": (50, 250), "diastolic_bp": (20, 150),
+    }
+    result: dict[str, float | int] = {}
+    for name, spec in distributions[category].items():
+        shift = float(adjustments.get(cause_group, {}).get(name, 0.0))
+        value = rng.gauss(float(spec["mean"]) + shift, float(spec["sd"]))
+        low, high = limits[name]
+        value = max(low, min(high, value))
+        result[name] = round(value, 1) if name == "temperature_c" else round(value)
+    return result
+
+
 def generate_patients(config: dict[str, Any]) -> list[dict[str, Any]]:
     n = int(config["daily_patients"])
     rng = random.Random(int(config["seed"]))
@@ -199,9 +296,21 @@ def generate_patients(config: dict[str, Any]) -> list[dict[str, Any]]:
         age = rng.randint(low_age, high_age)
         cause_probs = normalized(cause_by_age[age_group], f"Causas ({age_group})")
         cause_group = rng.choices(list(cause_probs), weights=list(cause_probs.values()), k=1)[0]
+        complaints = COMPLAINTS_BY_CAUSE.get(cause_group, (cause_group.replace("_", " "),))
+        complaint_text = rng.choice(complaints)
+        vitals = sample_vitals(category, cause_group, rng,
+                               config.get("synthetic_profile", {}))
         hour = rng.choices(range(24), weights=hour_weights, k=1)[0]
         arrival_minute = hour * 60 + rng.randrange(60)
         patient_threshold = rng.uniform(threshold_low, threshold_high)
+        prioria_prob = float(arrival_cfg.get(
+            "prioria_use_probability_by_age", {}).get(age_group, 0.0))
+        if not 0.0 <= prioria_prob <= 1.0:
+            raise ValueError("Las probabilidades de uso de PriorIA deben estar entre 0 y 1.")
+        uses_prioria = (
+            mode == "own_means" and category != "C1"
+            and rng.random() < prioria_prob
+        )
         patients.append({
             "patient_id": f"V2-{i:03d}",
             "arrival_minute": arrival_minute,
@@ -211,6 +320,9 @@ def generate_patients(config: dict[str, Any]) -> list[dict[str, Any]]:
             "arrival_mode": mode,
             "triage_category": category,
             "deis_cause_group": cause_group,
+            "chief_complaint": complaint_text,
+            **vitals,
+            "uses_prioria": uses_prioria,
             "abandonment_threshold": round(patient_threshold, 4)
         })
     return sorted(patients, key=lambda patient: (patient["arrival_minute"],
@@ -238,8 +350,11 @@ def main() -> None:
     if not args.config:
         parser.error("Indica --config o usa --write-template.")
     config = json.loads(args.config.read_text(encoding="utf-8"))
-    if config.get("metadata", {}).get("deis_values_verified") is not True:
-        raise SystemExit("Confirma los valores DEIS y completa la metadata antes de generar.")
+    metadata = config.get("metadata", {})
+    if metadata.get("deis_values_verified") is not True and metadata.get("test_fixture") is not True:
+        raise SystemExit(
+            "Completa las distribuciones DEIS verificadas o marca explícitamente una configuración de prueba sintética."
+        )
     patients = generate_patients(config)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", encoding="utf-8", newline="") as stream:
