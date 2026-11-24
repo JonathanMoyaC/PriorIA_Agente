@@ -1,0 +1,46 @@
+[
+  {
+    "split": "evaluation",
+    "comparison": "prioria_beam - fixed_pipeline",
+    "metric": "primary_mean_restricted_wait_to_occupancy_min",
+    "unit": "minutes",
+    "paired_scenarios": 40,
+    "mean_difference": -2.083337,
+    "ci95_low": -3.925002,
+    "ci95_high": -0.343057,
+    "bootstrap_replicates": 5000
+  },
+  {
+    "split": "evaluation",
+    "comparison": "prioria_beam - fixed_pipeline",
+    "metric": "abandonment_rate",
+    "unit": "proportion",
+    "paired_scenarios": 40,
+    "mean_difference": -0.008333,
+    "ci95_low": -0.020833,
+    "ci95_high": 0.004167,
+    "bootstrap_replicates": 5000
+  },
+  {
+    "split": "evaluation",
+    "comparison": "reactive - fixed_pipeline",
+    "metric": "primary_mean_restricted_wait_to_occupancy_min",
+    "unit": "minutes",
+    "paired_scenarios": 40,
+    "mean_difference": 0.0,
+    "ci95_low": 0.0,
+    "ci95_high": 0.0,
+    "bootstrap_replicates": 5000
+  },
+  {
+    "split": "evaluation",
+    "comparison": "reactive - fixed_pipeline",
+    "metric": "abandonment_rate",
+    "unit": "proportion",
+    "paired_scenarios": 40,
+    "mean_difference": 0.0,
+    "ci95_low": 0.0,
+    "ci95_high": 0.0,
+    "bootstrap_replicates": 5000
+  }
+]

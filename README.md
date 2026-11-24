@@ -79,6 +79,10 @@ Los resultados quedan separados por partición en `outputs/experiment/`:
 - `main_table.csv` y `paired_comparisons.json`: tabla principal e inferencia de
   la evaluación reservada cuando se ejecuta `--split all`.
 
+El ejecutor escribe las trazas como JSONL sin comprimir. En el repositorio se
+conservan además copias compactas `traces.jsonl.gz` para desarrollo y evaluación;
+se pueden descomprimir con `gzip -dk traces.jsonl.gz`.
+
 El desenlace principal es la espera restringida hasta ocupar un box compatible;
 los pacientes no asignados reciben el límite del horizonte. Se informa además
 abandono y se comprueba que no haya asignaciones incompatibles ejecutadas.
