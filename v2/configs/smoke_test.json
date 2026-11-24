@@ -3,7 +3,7 @@
   "seed": 20261124,
   "daily_patients": 100,
   "age_group_probabilities": {
-    "adult_young": 0.30,
+    "adult_young": 0.3,
     "adult_middle": 0.45,
     "adult_older": 0.25
   },
@@ -16,13 +16,13 @@
   },
   "deis_cause_probabilities_by_age": {
     "adult_young": {
-      "thoracic_pain": 0.10,
-      "respiratory_difficulty": 0.10,
+      "thoracic_pain": 0.1,
+      "respiratory_difficulty": 0.1,
       "abdominal_pain": 0.12,
       "trauma_fall": 0.18,
-      "wound_bleeding": 0.10,
+      "wound_bleeding": 0.1,
       "neurological_dizziness_syncope": 0.12,
-      "fever_infection": 0.10,
+      "fever_infection": 0.1,
       "gastrointestinal_urinary": 0.18
     },
     "adult_middle": {
@@ -30,9 +30,9 @@
       "respiratory_difficulty": 0.12,
       "abdominal_pain": 0.13,
       "trauma_fall": 0.14,
-      "wound_bleeding": 0.10,
-      "neurological_dizziness_syncope": 0.10,
-      "fever_infection": 0.10,
+      "wound_bleeding": 0.1,
+      "neurological_dizziness_syncope": 0.1,
+      "fever_infection": 0.1,
       "gastrointestinal_urinary": 0.16
     },
     "adult_older": {
@@ -52,19 +52,32 @@
     "sigma_hours": 4.0,
     "baseline": 0.15,
     "arrival_mode_shares": {
-      "own_means": 0.80,
+      "own_means": 0.8,
       "ambulance": 0.05,
       "police": 0.15
     },
     "mode_preference_weights_by_age": {
-      "adult_young": {"own_means": 8, "ambulance": 1, "police": 2},
-      "adult_middle": {"own_means": 5, "ambulance": 1, "police": 2},
-      "adult_older": {"own_means": 2, "ambulance": 5, "police": 2}
+      "adult_young": {
+        "own_means": 8,
+        "ambulance": 1,
+        "police": 2
+      },
+      "adult_middle": {
+        "own_means": 5,
+        "ambulance": 1,
+        "police": 2
+      },
+      "adult_older": {
+        "own_means": 2,
+        "ambulance": 5,
+        "police": 2
+      }
     },
-    "prioria_use_probability_by_age": {
-      "adult_young": 0.80,
-      "adult_middle": 0.50,
-      "adult_older": 0.20
+    "prioria_adoption_rate": 0.6,
+    "prioria_adoption_adjustment_by_age": {
+      "adult_young": 0.2,
+      "adult_middle": 0.0,
+      "adult_older": -0.25
     }
   },
   "resources": {
@@ -81,48 +94,66 @@
     "resuscitation_beds": 2,
     "triage_stations": 2,
     "triage_nurses": 3,
-    "procedure_slots": 2,
-    "observation_beds": 4
+    "admission_desks": 2,
+    "c2_treatment_nurses": 1
   },
   "triage": {
-    "prioria_duration_minutes": {"mean": 4.0, "sd": 0.5},
-    "human_duration_minutes": {"mean": 10.0, "sd": 2.0}
+    "prioria_duration_minutes": {
+      "mean": 4.0,
+      "sd": 0.5
+    },
+    "human_duration_minutes": {
+      "mean": 10.0,
+      "sd": 2.0
+    }
   },
   "care": {
     "consultation_minutes_by_category": {
-      "C1": {"mean": 60, "sd": 7.5},
-      "C2": {"mean": 45, "sd": 7.5},
-      "C3": {"mean": 30, "sd": 7.5},
-      "C4": {"mean": 20, "sd": 5.0},
-      "C5": {"mean": 15, "sd": 5.0}
+      "C1": {
+        "mean": 60,
+        "sd": 7.5
+      },
+      "C2": {
+        "mean": 45,
+        "sd": 7.5
+      },
+      "C3": {
+        "mean": 30,
+        "sd": 7.5
+      },
+      "C4": {
+        "mean": 20,
+        "sd": 5.0
+      },
+      "C5": {
+        "mean": 15,
+        "sd": 5.0
+      }
     },
-    "procedure_probability_by_cause": {
-      "thoracic_pain": 0.20,
-      "respiratory_difficulty": 0.15,
-      "abdominal_pain": 0.35,
-      "trauma_fall": 0.60,
-      "wound_bleeding": 0.55,
-      "neurological_dizziness_syncope": 0.15,
-      "fever_infection": 0.10,
-      "gastrointestinal_urinary": 0.20
+    "reevaluation_duration_minutes": {
+      "mean": 15,
+      "sd": 5
     },
-    "observation_probability_by_cause": {
-      "thoracic_pain": 0.35,
-      "respiratory_difficulty": 0.45,
-      "abdominal_pain": 0.25,
-      "trauma_fall": 0.10,
-      "wound_bleeding": 0.05,
-      "neurological_dizziness_syncope": 0.35,
-      "fever_infection": 0.40,
-      "gastrointestinal_urinary": 0.20
+    "treatment_probability_by_category": {
+      "C1": 0.9,
+      "C2": 0.8,
+      "C3": 0.55,
+      "C4": 0.0,
+      "C5": 0.0
     },
-    "observation_after_procedure_probability": 0.50,
-    "procedure_favorable_probability": 0.85,
-    "observation_favorable_probability": 0.90,
-    "second_procedure_favorable_probability": 0.80,
-    "procedure_duration_minutes": {"mean": 30, "sd": 10},
-    "observation_duration_minutes": {"mean": 60, "sd": 15},
-    "hospitalization_probability_after_care": 0.20
+    "treatment_duration_minutes": {
+      "minimum": 30,
+      "maximum": 120
+    },
+    "reevaluation_discharge_probability": 0.7,
+    "max_treatment_failures_before_hospitalization": 2,
+    "hospitalization_probability_without_treatment_by_category": {
+      "C1": 0.6,
+      "C2": 0.2,
+      "C3": 0.1,
+      "C4": 0.0,
+      "C5": 0.0
+    }
   },
   "specialty_by_cause": {
     "thoracic_pain": "internal_medicine",
@@ -145,7 +176,10 @@
       "adult_middle": 0.0,
       "adult_older": -0.3
     },
-    "threshold_range": [0.55, 0.75]
+    "threshold_range": [
+      0.55,
+      0.75
+    ]
   },
   "max_simulation_minutes": 10080,
   "metadata": {
@@ -155,9 +189,15 @@
     "deis_values_verified": false,
     "test_fixture": true,
     "assumption_notes": [
-      "Fixture exclusivamente sintético para validar el motor; no representa una estimación DEIS ni prevalencias clínicas.",
-      "Probabilidades de procedimientos, observación y evolución son supuestos de prueba configurables, no recomendaciones clínicas.",
-      "Uso de PriorIA por edad y capacidad de observación/procedimientos aún requieren validación local."
+      "Fixture exclusivamente sintético para prueba mecánica; no representa una estimación DEIS ni prevalencias clínicas.",
+      "Adopción de PriorIA, asignación de tratamientos, evolución, dotación de enfermería en sala C2 y desenlaces son supuestos configurables, no recomendaciones clínicas.",
+      "Las probabilidades de categoría, edad, causa y signos vitales aún no están calibradas con DEIS."
     ]
+  },
+  "admission": {
+    "duration_minutes": {
+      "mean": 2,
+      "sd": 0.5
+    }
   }
 }
