@@ -79,10 +79,11 @@ def config_template() -> dict[str, Any]:
                 "adult_middle": {"own_means": 5, "ambulance": 1, "police": 2},
                 "adult_older": {"own_means": 2, "ambulance": 5, "police": 2}
             },
-            "prioria_use_probability_by_age": {
-                "adult_young": 0.80,
-                "adult_middle": 0.50,
-                "adult_older": 0.20
+            "prioria_adoption_rate": 0.60,
+            "prioria_adoption_adjustment_by_age": {
+                "adult_young": 0.20,
+                "adult_middle": 0.0,
+                "adult_older": -0.25
             }
         },
         "resources": {
@@ -97,10 +98,15 @@ def config_template() -> dict[str, Any]:
             "general_waiting_chairs": 36,
             "c2_waiting_chairs": 24,
             "resuscitation_beds": 2,
+            "admission_desks": 2,
             "triage_stations": 2,
             "triage_nurses": 3,
-            "procedure_slots": 2,
-            "observation_beds": 4
+            "c2_treatment_nurses": 1
+        },
+        "admission": {"duration_minutes": {"mean": 2, "sd": 0.5}},
+        "triage": {
+            "prioria_duration_minutes": {"mean": 4, "sd": 0.5},
+            "human_duration_minutes": {"mean": 10, "sd": 2}
         },
         "care": {
             "consultation_minutes_by_category": {
@@ -110,15 +116,15 @@ def config_template() -> dict[str, Any]:
                 "C4": {"mean": 20, "sd": 5.0},
                 "C5": {"mean": 15, "sd": 5.0}
             },
-            "procedure_probability_by_cause": {},
-            "observation_probability_by_cause": {},
-            "observation_after_procedure_probability": 0.50,
-            "procedure_favorable_probability": 0.85,
-            "observation_favorable_probability": 0.90,
-            "second_procedure_favorable_probability": 0.80,
-            "procedure_duration_minutes": {"mean": 30, "sd": 10},
-            "observation_duration_minutes": {"mean": 60, "sd": 15},
-            "hospitalization_probability_after_care": 0.20
+            "treatment_probability_by_category": {
+                "C1": 0.90, "C2": 0.80, "C3": 0.55, "C4": 0.0, "C5": 0.0
+            },
+            "treatment_duration_minutes": {"minimum": 30, "maximum": 120},
+            "reevaluation_discharge_probability": 0.70,
+            "max_treatment_failures_before_hospitalization": 2,
+            "hospitalization_probability_without_treatment_by_category": {
+                "C1": 0.60, "C2": 0.20, "C3": 0.10, "C4": 0.0, "C5": 0.0
+            }
         },
         "synthetic_profile": {
             "vitals_by_category": DEFAULT_VITALS_BY_CATEGORY,
@@ -155,7 +161,7 @@ def config_template() -> dict[str, Any]:
             "deis_values_verified": False,
             "test_fixture": False,
             "assumption_notes": [
-                "Uso de PriorIA por edad, capacidades de procedimientos y observación, desenlaces clínicos y hospitalización requieren calibración local."
+                "La tasa de adopción y sus ajustes por edad, las rutas de tratamiento y las probabilidades de desenlace son supuestos configurables pendientes de calibración local."
             ]
         }
     }
@@ -303,10 +309,12 @@ def generate_patients(config: dict[str, Any]) -> list[dict[str, Any]]:
         hour = rng.choices(range(24), weights=hour_weights, k=1)[0]
         arrival_minute = hour * 60 + rng.randrange(60)
         patient_threshold = rng.uniform(threshold_low, threshold_high)
-        prioria_prob = float(arrival_cfg.get(
-            "prioria_use_probability_by_age", {}).get(age_group, 0.0))
-        if not 0.0 <= prioria_prob <= 1.0:
-            raise ValueError("Las probabilidades de uso de PriorIA deben estar entre 0 y 1.")
+        adoption_rate = float(arrival_cfg.get("prioria_adoption_rate", 0.60))
+        age_adjustment = float(arrival_cfg.get(
+            "prioria_adoption_adjustment_by_age", {}).get(age_group, 0.0))
+        if not 0.0 <= adoption_rate <= 1.0:
+            raise ValueError("prioria_adoption_rate debe estar entre 0 y 1.")
+        prioria_prob = max(0.0, min(1.0, adoption_rate + age_adjustment))
         uses_prioria = (
             mode == "own_means" and category != "C1"
             and rng.random() < prioria_prob
@@ -322,6 +330,7 @@ def generate_patients(config: dict[str, Any]) -> list[dict[str, Any]]:
             "deis_cause_group": cause_group,
             "chief_complaint": complaint_text,
             **vitals,
+            "prioria_adoption_probability": round(prioria_prob, 4),
             "uses_prioria": uses_prioria,
             "abandonment_threshold": round(patient_threshold, 4)
         })
