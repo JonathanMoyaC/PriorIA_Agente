@@ -48,9 +48,12 @@ def main() -> None:
                 "mean_arrival_to_first_consult_minutes"],
             "mean_total_wait_minutes": summary["mean_total_wait_minutes"],
             "standing_patient_minutes": summary["standing_patient_minutes"],
-            "max_general_waiting_occupancy": summary[
-                "max_general_waiting_occupancy"],
-            "max_c2_waiting_occupancy": summary["max_c2_waiting_occupancy"],
+            "treatments_started": summary["treatments_started"],
+            "treatment_failures": summary["treatment_failures"],
+            "max_general_waiting_chair_occupancy": summary[
+                "max_general_waiting_chair_occupancy"],
+            "max_c2_waiting_chair_occupancy": summary[
+                "max_c2_waiting_chair_occupancy"],
             "deis_values_verified": summary["metadata"]["deis_values_verified"],
         })
     args.output.parent.mkdir(parents=True, exist_ok=True)
