@@ -1,0 +1,6 @@
+fastapi==0.141.1
+pydantic==2.13.4
+simpy==4.1.1
+
+# Optional dependency for serving the API in main.py:
+uvicorn==0.52.1

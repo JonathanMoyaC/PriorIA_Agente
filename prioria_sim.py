@@ -153,8 +153,17 @@ class BeamSearchPolicy(AllocationPolicy):
 
         patients = {p.patient_id: p for p in observation.waiting}
         boxes = tuple(sorted(observation.boxes, key=lambda b: b.box_id))
+        # A predicted release timestamp may already be in the past while the
+        # environment still reports the box as busy (service times are uncertain).
+        # Keep every busy box unavailable for the current decision; the agent will
+        # replan after the next observed event instead of issuing a stale assignment.
+        root_release_times = tuple(
+            max(float(b.expected_available_at), float(observation.now) + 1.0)
+            if b.busy else float(observation.now)
+            for b in boxes
+        )
         root = _BeamNode(float(observation.now), tuple(patients),
-                         tuple(float(b.expected_available_at) for b in boxes),
+                         root_release_times,
                          0.0, ())
         beam = [root]
         explored: list[dict[str, Any]] = []
@@ -173,6 +182,14 @@ class BeamSearchPolicy(AllocationPolicy):
                             if _compatible(patients[patient_id], boxes[box_i])]
 
                 if feasible:
+                    # En cualquier estado del plan, no asignar una categoría
+                    # menos urgente si existe una categoría más urgente con
+                    # algún box compatible disponible.
+                    highest_priority = min(patients[patient_id].priority
+                                           for patient_id, _ in feasible)
+                    feasible = [(patient_id, box_i)
+                                for patient_id, box_i in feasible
+                                if patients[patient_id].priority == highest_priority]
                     for patient_id, box_i in feasible:
                         patient = patients[patient_id]
                         wait = max(0.0, node.now - patient.eligible_at)
@@ -217,6 +234,7 @@ class BeamSearchPolicy(AllocationPolicy):
                             "Primera asignación del plan de menor costo estimado.",
                             {"beam_width": self.width,
                              "search_horizon": self.search_horizon,
+                             "priority_constraint": "strict among currently feasible patients",
                              "selected_plan": [{"kind": kind, "patient_id": patient_id,
                                                 "box_id": box_id}
                                                for kind, patient_id, box_id in best.path],
@@ -226,6 +244,7 @@ class BeamSearchPolicy(AllocationPolicy):
         return Decision("wait", rationale="La búsqueda recomienda esperar al siguiente evento.",
                         deliberation={"beam_width": self.width,
                                       "search_horizon": self.search_horizon,
+                                      "priority_constraint": "strict among currently feasible patients",
                                       "retained_nodes": explored})
 
 
@@ -268,7 +287,9 @@ class EventSimulator:
                                   "patient_id": patient.patient_id})
 
         def patient_abandonment(patient: Patient):
-            abandon_at = patient.eligible_at + patient.patience_minutes
+            # At minute resolution, "wait > patience" means the patient remains
+            # eligible at the exact threshold and abandons one minute later.
+            abandon_at = patient.eligible_at + patient.patience_minutes + 1
             if abandon_at > self.horizon_minutes:
                 return
             yield env.timeout(abandon_at)
@@ -364,12 +385,36 @@ class EventSimulator:
                     for pid, p in truth.items()
                     if pid not in assigned and p.eligible_at <= self.horizon_minutes}
         assigned_waits = [assigned[pid] - truth[pid].eligible_at for pid in assigned]
-        primary_waits = list(assigned_waits) + list(censored.values())
+        restricted_wait_by_patient = {
+            patient.patient_id: (assigned[patient.patient_id] - patient.eligible_at
+                                 if patient.patient_id in assigned
+                                 else min(self.horizon_minutes,
+                                          max(0, self.horizon_minutes - patient.eligible_at)))
+            for patient in truth.values()
+            if patient.eligible_at <= self.horizon_minutes
+        }
+        primary_waits = list(restricted_wait_by_patient.values())
         observed_waits = [assigned[pid] - truth[pid].eligible_at for pid in assigned]
         observed_waits += [abandoned[pid] - truth[pid].eligible_at for pid in abandoned]
-        observed_waits += list(censored.values())
+        observed_waits += [wait for pid, wait in censored.items() if pid not in abandoned]
+        ordered_primary_waits = sorted(primary_waits)
         ordered_latencies = sorted(decision_latencies_ms)
         p95_index = max(0, int(0.95 * len(ordered_latencies) + 0.999999) - 1)
+        busy_minutes = sum(
+            max(0, min(self.horizon_minutes,
+                       assigned_at + truth[patient_id].actual_service_minutes) - assigned_at)
+            for patient_id, assigned_at in assigned.items()
+        )
+
+        def percentile(values: list[float], quantile: float) -> float | None:
+            if not values:
+                return None
+            position = (len(values) - 1) * quantile
+            lower = int(position)
+            upper = min(lower + 1, len(values) - 1)
+            fraction = position - lower
+            return values[lower] * (1 - fraction) + values[upper] * fraction
+
         metrics = {
             "episode_id": episode_id,
             "seed": seed,
@@ -377,11 +422,32 @@ class EventSimulator:
             "patients_eligible": sum(p.eligible_at <= self.horizon_minutes for p in truth.values()),
             "assigned": len(assigned),
             "abandoned": len(abandoned),
-            "not_assigned_at_horizon": len(censored),
+            "not_assigned_at_horizon": len(waiting),
             "primary_mean_restricted_wait_to_occupancy_min": round(sum(primary_waits) / len(primary_waits), 4)
                 if primary_waits else None,
             "mean_wait_to_occupancy_assigned_only_min": round(sum(assigned_waits) / len(assigned_waits), 4)
                 if assigned_waits else None,
+            "restricted_wait_p50_min": round(percentile(ordered_primary_waits, 0.50), 4)
+                if ordered_primary_waits else None,
+            "restricted_wait_p90_min": round(percentile(ordered_primary_waits, 0.90), 4)
+                if ordered_primary_waits else None,
+            "restricted_wait_p95_min": round(percentile(ordered_primary_waits, 0.95), 4)
+                if ordered_primary_waits else None,
+            "box_utilization": round(busy_minutes / (len(self.boxes) * self.horizon_minutes), 6)
+                if self.boxes and self.horizon_minutes else None,
+            **{
+                f"restricted_wait_priority_{priority}_min": round(
+                    sum(restricted_wait_by_patient[patient.patient_id]
+                        for patient in truth.values()
+                        if patient.patient_id in restricted_wait_by_patient
+                        and patient.priority == priority)
+                    / sum(1 for patient in truth.values()
+                          if patient.patient_id in restricted_wait_by_patient
+                          and patient.priority == priority), 4
+                ) if any(patient.patient_id in restricted_wait_by_patient
+                         and patient.priority == priority for patient in truth.values()) else None
+                for priority in range(1, 6)
+            },
             "mean_observed_wait_to_terminal_min": round(sum(observed_waits) / len(observed_waits), 4)
                 if observed_waits else None,
             "abandonment_rate": round(len(abandoned) / max(1, sum(

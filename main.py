@@ -89,8 +89,12 @@ def _summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     summary = []
     numeric_fields = [
         "primary_mean_restricted_wait_to_occupancy_min",
+        "restricted_wait_p50_min",
+        "restricted_wait_p90_min",
+        "restricted_wait_p95_min",
         "mean_wait_to_occupancy_assigned_only_min",
         "mean_observed_wait_to_terminal_min",
+        "box_utilization",
         "abandonment_rate",
         "patients_eligible",
         "assigned",
@@ -100,6 +104,7 @@ def _summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         "invalid_assignment_attempts_rejected",
         "mean_decision_time_ms",
         "p95_decision_time_ms",
+        *(f"restricted_wait_priority_{priority}_min" for priority in range(1, 6)),
     ]
     for policy, items in by_policy.items():
         entry: dict[str, Any] = {"policy": policy, "scenarios": len(items)}
@@ -107,7 +112,10 @@ def _summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
             values = [float(item[key]) for item in items if item.get(key) is not None]
             # Raw metrics that already start with "mean_" must not receive a
             # second prefix: the UI and API contract use mean_decision_time_ms.
-            metric_name = key.removeprefix("mean_") if key.startswith("mean_") else key
+            if key == "primary_mean_restricted_wait_to_occupancy_min":
+                metric_name = "restricted_wait_to_occupancy_min"
+            else:
+                metric_name = key.removeprefix("mean_") if key.startswith("mean_") else key
             entry[f"mean_{metric_name}"] = round(mean(values), 4) if values else None
             entry[f"sd_{metric_name}"] = round(stdev(values), 4) if len(values) > 1 else 0.0 if values else None
         summary.append(entry)

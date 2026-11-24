@@ -1,0 +1,618 @@
+{
+  "manifest_version": "1.0",
+  "generated_on": "2026-11-24",
+  "master_seed": 20261124,
+  "design": {
+    "development_scenarios": 80,
+    "evaluation_scenarios": 40,
+    "total": 120,
+    "paired_policies": [
+      "fixed_pipeline",
+      "reactive",
+      "prioria_beam"
+    ],
+    "evaluation_rule": "No usar escenarios evaluation para modificar reglas, par\u00e1metros o c\u00f3digo antes de congelar la versi\u00f3n evaluada."
+  },
+  "scenarios": [
+    {
+      "scenario_id": "T001",
+      "seed": 33259997,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T002",
+      "seed": 10459241,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T003",
+      "seed": 15976577,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T004",
+      "seed": 28495072,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T005",
+      "seed": 91346270,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T006",
+      "seed": 72432996,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T007",
+      "seed": 75713498,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T008",
+      "seed": 31837719,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T009",
+      "seed": 68830021,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T010",
+      "seed": 66982453,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T011",
+      "seed": 86308997,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T012",
+      "seed": 43055945,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T013",
+      "seed": 20173547,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T014",
+      "seed": 10140487,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T015",
+      "seed": 88318854,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T016",
+      "seed": 85391822,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T017",
+      "seed": 17755713,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T018",
+      "seed": 29008098,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T019",
+      "seed": 95674693,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T020",
+      "seed": 70801138,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T021",
+      "seed": 49123275,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T022",
+      "seed": 13639319,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T023",
+      "seed": 82872216,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T024",
+      "seed": 57309053,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T025",
+      "seed": 89160039,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T026",
+      "seed": 43640820,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T027",
+      "seed": 19739410,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T028",
+      "seed": 20152734,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T029",
+      "seed": 80965337,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T030",
+      "seed": 44097325,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T031",
+      "seed": 96462921,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T032",
+      "seed": 31975507,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T033",
+      "seed": 70395221,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T034",
+      "seed": 83657249,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T035",
+      "seed": 53331233,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T036",
+      "seed": 40586103,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T037",
+      "seed": 44801268,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T038",
+      "seed": 89136973,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T039",
+      "seed": 45510724,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T040",
+      "seed": 46125503,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T041",
+      "seed": 58832143,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T042",
+      "seed": 87244039,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T043",
+      "seed": 28768328,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T044",
+      "seed": 77665989,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T045",
+      "seed": 54992043,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T046",
+      "seed": 14066331,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T047",
+      "seed": 50431294,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T048",
+      "seed": 15900950,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T049",
+      "seed": 30384294,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T050",
+      "seed": 13643580,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T051",
+      "seed": 48129997,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T052",
+      "seed": 79386640,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T053",
+      "seed": 72658936,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T054",
+      "seed": 63932404,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T055",
+      "seed": 74294485,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T056",
+      "seed": 64118917,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T057",
+      "seed": 91649716,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T058",
+      "seed": 79175513,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T059",
+      "seed": 98079748,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T060",
+      "seed": 67399185,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T061",
+      "seed": 38136488,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T062",
+      "seed": 52489569,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T063",
+      "seed": 35782514,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T064",
+      "seed": 34196029,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T065",
+      "seed": 26581307,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T066",
+      "seed": 36779551,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T067",
+      "seed": 75951920,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T068",
+      "seed": 96094351,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T069",
+      "seed": 63309823,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T070",
+      "seed": 35943512,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T071",
+      "seed": 20246262,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T072",
+      "seed": 65893398,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T073",
+      "seed": 32360185,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T074",
+      "seed": 89705008,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T075",
+      "seed": 67864021,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T076",
+      "seed": 62178619,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T077",
+      "seed": 75502894,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T078",
+      "seed": 24672151,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T079",
+      "seed": 71908533,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T080",
+      "seed": 14315800,
+      "split": "development"
+    },
+    {
+      "scenario_id": "T081",
+      "seed": 74812339,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T082",
+      "seed": 65572563,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T083",
+      "seed": 86547338,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T084",
+      "seed": 22988376,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T085",
+      "seed": 14540085,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T086",
+      "seed": 75935295,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T087",
+      "seed": 38842287,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T088",
+      "seed": 84765312,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T089",
+      "seed": 58836715,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T090",
+      "seed": 76376854,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T091",
+      "seed": 32288666,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T092",
+      "seed": 29166341,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T093",
+      "seed": 72791296,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T094",
+      "seed": 53454469,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T095",
+      "seed": 14691489,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T096",
+      "seed": 45237996,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T097",
+      "seed": 64129781,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T098",
+      "seed": 61692536,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T099",
+      "seed": 57459010,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T100",
+      "seed": 77171612,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T101",
+      "seed": 95288944,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T102",
+      "seed": 53737877,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T103",
+      "seed": 88261795,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T104",
+      "seed": 21950935,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T105",
+      "seed": 11121340,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T106",
+      "seed": 21992047,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T107",
+      "seed": 28637761,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T108",
+      "seed": 83514819,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T109",
+      "seed": 46877577,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T110",
+      "seed": 42133486,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T111",
+      "seed": 68423697,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T112",
+      "seed": 84362891,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T113",
+      "seed": 78897229,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T114",
+      "seed": 20214503,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T115",
+      "seed": 37390241,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T116",
+      "seed": 14592564,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T117",
+      "seed": 69027696,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T118",
+      "seed": 18378772,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T119",
+      "seed": 10820176,
+      "split": "evaluation"
+    },
+    {
+      "scenario_id": "T120",
+      "seed": 55244600,
+      "split": "evaluation"
+    }
+  ]
+}
