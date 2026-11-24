@@ -130,12 +130,27 @@ class EndToEndSimulationTests(unittest.TestCase):
             self.assertEqual(row["destination"], expected)
         self.assertTrue(all(r["seat_released"] for r in trace
                             if r["event"] == "called_to_triage"))
-        treatment_events = [r for r in trace if r["event"] == "treatment_started_by_nurse"]
-        self.assertTrue(treatment_events)
+        nursing_events = [r for r in trace
+                          if r["event"] == "treatment_nurse_procedure_started"]
+        observation_events = [r for r in trace
+                              if r["event"] == "treatment_observation_started"]
+        self.assertTrue(nursing_events)
+        self.assertTrue(observation_events)
         self.assertTrue(all(r["room"] == "c2" and r["chair_state"] in
                             {"seated", "standing"} and
-                            30 <= r["duration_minutes"] <= 120
-                            for r in treatment_events))
+                            5 <= r["duration_minutes"] <= 10
+                            for r in nursing_events))
+        self.assertTrue(all(30 <= r["duration_minutes"] <= 120
+                            for r in observation_events))
+        triage_durations = {r["mode"]: [] for r in trace
+                            if r["event"] == "triage_started"}
+        for row in trace:
+            if row["event"] == "triage_started":
+                triage_durations[row["mode"]].append(row["duration_minutes"])
+        self.assertTrue(all(1 <= duration <= 5
+                            for duration in triage_durations.get("prioria", [])))
+        self.assertTrue(all(10 <= duration <= 15
+                            for duration in triage_durations.get("human", [])))
         self.assertTrue(any(row["event"] == "called_to_reevaluation" for row in trace))
         patient_rows = [r for r in trace if r["event"] == "patient_summary"]
         self.assertTrue(all(r["treatments_received"] == 0 for r in patient_rows
@@ -165,10 +180,42 @@ class EndToEndSimulationTests(unittest.TestCase):
         self.assertEqual(summary["hospitalized"], 1)
         self.assertEqual(summary["discharged"], 0)
         self.assertEqual(summary["abandoned"], 0)
-        self.assertEqual(sum(r["event"] == "treatment_started_by_nurse" for r in trace), 2)
+        self.assertEqual(sum(r["event"] == "treatment_nurse_procedure_started"
+                             for r in trace), 2)
+        self.assertEqual(sum(r["event"] == "treatment_observation_started"
+                             for r in trace), 2)
         self.assertEqual(sum(r["event"] == "treatment_failed" for r in trace), 2)
         self.assertTrue(any(r.get("reason") == "dos_tratamientos_fallidos"
                             for r in trace if r["event"] == "hospitalized"))
+
+    def test_c1_uses_triage_nurse_only_if_attention_pool_is_empty(self) -> None:
+        config = copy.deepcopy(load_fixture())
+        config["daily_patients"] = 1
+        config["age_group_probabilities"] = {
+            "adult_young": 0.0, "adult_middle": 1.0, "adult_older": 0.0}
+        config["triage_category_probabilities"] = {
+            "C1": 1.0, "C2": 0.0, "C3": 0.0, "C4": 0.0, "C5": 0.0}
+        config["deis_cause_probabilities_by_age"] = {
+            key: {"thoracic_pain": 1.0} for key in
+            ("adult_young", "adult_middle", "adult_older")}
+        config["arrival"]["arrival_mode_shares"] = {
+            "own_means": 1.0, "ambulance": 0.0, "police": 0.0}
+        config["arrival"]["prioria_adoption_rate"] = 0.0
+        config["arrival"]["prioria_adoption_adjustment_by_age"] = {
+            "adult_young": 0.0, "adult_middle": 0.0, "adult_older": 0.0}
+        config["resources"]["box_nurses"] = 0
+        summary, trace = simulate_day(config)
+        c1_nurse_events = [r for r in trace if r["event"] == "nurse_attended_c1"]
+        self.assertEqual(len(c1_nurse_events), 1)
+        self.assertEqual(c1_nurse_events[0]["nurse_source"], "triage_fallback")
+        self.assertEqual(summary["unresolved"], 0)
+
+        config["resources"]["box_nurses"] = 1
+        _, trace_with_attention_nurse = simulate_day(config)
+        c1_nurse_events = [r for r in trace_with_attention_nurse
+                           if r["event"] == "nurse_attended_c1"]
+        self.assertEqual(len(c1_nurse_events), 1)
+        self.assertEqual(c1_nurse_events[0]["nurse_source"], "attention")
 
     def test_congestion_exercises_standing_and_abandonment(self) -> None:
         config = copy.deepcopy(load_fixture())
@@ -179,7 +226,6 @@ class EndToEndSimulationTests(unittest.TestCase):
             "box_nurses": 1,
             "general_waiting_chairs": 1,
             "c2_waiting_chairs": 1,
-            "c2_treatment_nurses": 1,
         })
         config["abandonment"].update({
             "risk_intercept": -2.5, "beta_wait": 2.5,
