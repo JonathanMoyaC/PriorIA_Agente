@@ -18,6 +18,7 @@ class WaitingPatient:
     triage_category: str
     age_group: str
     abandonment_threshold: float
+    waiting_stage: str = "initial"
 
 
 class GeneralWaitingRoom:
@@ -168,6 +169,36 @@ class WaitingAreas:
         seated = room.arrive(patient)
         self._patient_rooms[patient.patient_id] = area
         return area, seated
+
+    def return_for_procedure_or_observation(
+        self,
+        patient: WaitingPatient,
+        now_minute: int,
+        waiting_stage: str,
+    ) -> tuple[str, bool]:
+        """Re-queue a patient in C2 while awaiting a procedure or observation.
+
+        The patient joins the C2 FIFO at now_minute, competes for its 24 chairs,
+        and stands in the hallway when all chairs are occupied. The caller should
+        invoke this after the patient leaves their prior waiting area for care.
+        """
+        if waiting_stage not in {"procedure", "observation"}:
+            raise ValueError("waiting_stage debe ser 'procedure' u 'observation'.")
+        if patient.patient_id in self._patient_rooms:
+            raise ValueError(
+                f"Paciente aún está en una sala de espera: {patient.patient_id}"
+            )
+        requeued = WaitingPatient(
+            patient_id=patient.patient_id,
+            queue_entered_minute=now_minute,
+            triage_category=patient.triage_category,
+            age_group=patient.age_group,
+            abandonment_threshold=patient.abandonment_threshold,
+            waiting_stage=waiting_stage,
+        )
+        seated = self.c2.arrive(requeued)
+        self._patient_rooms[patient.patient_id] = "c2"
+        return "c2", seated
 
     def leave(self, patient_id: str) -> tuple[str, str | None]:
         """Remove a waiting patient and return (area, newly seated patient ID)."""
