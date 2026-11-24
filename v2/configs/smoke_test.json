@@ -94,17 +94,16 @@
     "resuscitation_beds": 2,
     "triage_stations": 2,
     "triage_nurses": 3,
-    "admission_desks": 2,
-    "c2_treatment_nurses": 1
+    "admission_desks": 2
   },
   "triage": {
-    "prioria_duration_minutes": {
-      "mean": 4.0,
-      "sd": 0.5
+    "prioria_validation_minutes": {
+      "minimum": 1,
+      "maximum": 5
     },
-    "human_duration_minutes": {
-      "mean": 10.0,
-      "sd": 2.0
+    "human_categorization_minutes": {
+      "minimum": 10,
+      "maximum": 15
     }
   },
   "care": {
@@ -153,6 +152,10 @@
       "C3": 0.1,
       "C4": 0.0,
       "C5": 0.0
+    },
+    "treatment_nurse_minutes": {
+      "minimum": 5,
+      "maximum": 10
     }
   },
   "specialty_by_cause": {
@@ -190,7 +193,7 @@
     "test_fixture": true,
     "assumption_notes": [
       "Fixture exclusivamente sintético para prueba mecánica; no representa una estimación DEIS ni prevalencias clínicas.",
-      "Adopción de PriorIA, asignación de tratamientos, evolución, dotación de enfermería en sala C2 y desenlaces son supuestos configurables, no recomendaciones clínicas.",
+      "Adopción de PriorIA, asignación de tratamientos, evolución, dotaciones de enfermería y desenlaces son supuestos configurables, no recomendaciones clínicas.",
       "Las probabilidades de categoría, edad, causa y signos vitales aún no están calibradas con DEIS."
     ]
   },
