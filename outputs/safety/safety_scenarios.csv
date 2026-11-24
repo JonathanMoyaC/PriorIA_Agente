@@ -29,3 +29,6 @@ S09_horizon_boundary,"An arrival at the horizon is recorded as unassigned at hor
 S10_specialized_box_preserved,"A monitoring-only patient uses the specialized box, leaving the basic box available.",fixed_pipeline,PASS,,2,2,0,0,0,0
 S10_specialized_box_preserved,"A monitoring-only patient uses the specialized box, leaving the basic box available.",reactive,PASS,,2,2,0,0,0,0
 S10_specialized_box_preserved,"A monitoring-only patient uses the specialized box, leaving the basic box available.",prioria_beam,PASS,,2,2,0,0,0,0
+S11_search_timeout_fallback,A forced search timeout yields a feasible reactive action and records the fallback.,fixed_pipeline,PASS,,2,2,0,0,0,0
+S11_search_timeout_fallback,A forced search timeout yields a feasible reactive action and records the fallback.,reactive,PASS,,2,2,0,0,0,0
+S11_search_timeout_fallback,A forced search timeout yields a feasible reactive action and records the fallback.,prioria_beam,PASS,,2,2,0,0,0,0

@@ -128,9 +128,12 @@ class BeamSearchPolicy(AllocationPolicy):
 
     name = "prioria_beam"
 
-    def __init__(self, width: int = 20, horizon: int = 5):
+    def __init__(self, width: int = 20, horizon: int = 5, timeout_ms: float = 50.0):
+        if timeout_ms < 0:
+            raise ValueError("El límite de búsqueda no puede ser negativo.")
         self.width = width
         self.search_horizon = horizon
+        self.timeout_ms = float(timeout_ms)
 
     @staticmethod
     def _weight(priority: int) -> float:
@@ -167,10 +170,18 @@ class BeamSearchPolicy(AllocationPolicy):
                          0.0, ())
         beam = [root]
         explored: list[dict[str, Any]] = []
+        search_started = perf_counter()
+        deadline = search_started + self.timeout_ms / 1000.0
+        timed_out = perf_counter() >= deadline
 
         for depth in range(self.search_horizon):
+            if timed_out:
+                break
             children: list[_BeamNode] = []
             for node in beam:
+                if perf_counter() >= deadline:
+                    timed_out = True
+                    break
                 if not node.remaining:
                     children.append(node)
                     continue
@@ -191,6 +202,9 @@ class BeamSearchPolicy(AllocationPolicy):
                                 for patient_id, box_i in feasible
                                 if patients[patient_id].priority == highest_priority]
                     for patient_id, box_i in feasible:
+                        if perf_counter() >= deadline:
+                            timed_out = True
+                            break
                         patient = patients[patient_id]
                         wait = max(0.0, node.now - patient.eligible_at)
                         expected_service = observation.expected_service_minutes.get(
@@ -204,6 +218,8 @@ class BeamSearchPolicy(AllocationPolicy):
                             node.cost + self._weight(patient.priority) * wait,
                             node.path + (("assign", patient_id, boxes[box_i].box_id),),
                             node.waits))
+                    if timed_out:
+                        break
                 else:
                     future_releases = [release for release in node.release_at
                                        if release > node.now]
@@ -218,6 +234,8 @@ class BeamSearchPolicy(AllocationPolicy):
                     else:
                         children.append(node)
 
+            if timed_out:
+                break
             if not children:
                 break
             children.sort(key=lambda node: (self._score(node, patients),
@@ -227,6 +245,22 @@ class BeamSearchPolicy(AllocationPolicy):
                              "path": list(n.path), "simulated_time": n.now}
                             for n in beam)
 
+        if timed_out:
+            fallback = ReactivePolicy().select_action(observation)
+            return Decision(
+                fallback.kind,
+                fallback.patient_id,
+                fallback.box_id,
+                "Límite de búsqueda alcanzado; acción segura de la política reactiva.",
+                {"beam_width": self.width,
+                 "search_horizon": self.search_horizon,
+                 "timeout_ms": self.timeout_ms,
+                 "timeout_fallback": True,
+                 "elapsed_ms": round((perf_counter() - search_started) * 1000.0, 4),
+                 "priority_constraint": "strict among currently feasible patients",
+                 "retained_nodes": explored},
+            )
+
         best = min(beam, key=lambda node: (self._score(node, patients), node.path))
         if best.path and best.path[0][0] == "assign":
             _, patient_id, box_id = best.path[0]
@@ -234,6 +268,7 @@ class BeamSearchPolicy(AllocationPolicy):
                             "Primera asignación del plan de menor costo estimado.",
                             {"beam_width": self.width,
                              "search_horizon": self.search_horizon,
+                             "timeout_ms": self.timeout_ms,
                              "priority_constraint": "strict among currently feasible patients",
                              "selected_plan": [{"kind": kind, "patient_id": patient_id,
                                                 "box_id": box_id}
@@ -244,6 +279,7 @@ class BeamSearchPolicy(AllocationPolicy):
         return Decision("wait", rationale="La búsqueda recomienda esperar al siguiente evento.",
                         deliberation={"beam_width": self.width,
                                       "search_horizon": self.search_horizon,
+                                      "timeout_ms": self.timeout_ms,
                                       "priority_constraint": "strict among currently feasible patients",
                                       "retained_nodes": explored})
 

@@ -1,0 +1,39 @@
+{
+  "manifest": "/workspace/scratch/52cd01bdc9fd/PriorIA_Agente/configs/experiment_manifest.json",
+  "manifest_master_seed": 20261124,
+  "design": {
+    "development_scenarios": 80,
+    "evaluation_scenarios": 40,
+    "total": 120,
+    "paired_policies": [
+      "fixed_pipeline",
+      "reactive",
+      "prioria_beam"
+    ],
+    "evaluation_rule": "No usar escenarios evaluation para modificar reglas, parámetros o código antes de congelar la versión evaluada."
+  },
+  "split_run": [
+    "development"
+  ],
+  "horizon_minutes": 240,
+  "patients_per_scenario": 18,
+  "service_means_minutes": {
+    "short": 20.0,
+    "medium": 40.0,
+    "long": 65.0
+  },
+  "beam_width": 20,
+  "search_horizon": 5,
+  "search_timeout_ms": 50.0,
+  "policies": [
+    "fixed_pipeline",
+    "reactive",
+    "prioria_beam"
+  ],
+  "source_sha256": {
+    "prioria_sim.py": "b6a43f0d88771b4aef559dd197ab76bcaf539fcf8b90c9f44603ccc0b7dcca38",
+    "run_experiment.py": "32c39d3bf66b8494c29e942aa2a34048594cbac9fa13ec0ff237e67d40163249",
+    "main.py": "da908be7eab9381852aeb99957aa0a79857b9c6d8eaf10a032a6dd6836250895",
+    "experiment_manifest.json": "6b3d9e153845b16c3b8aa09059f8e8c4a0a29f3bfbf780f4698ab4523f4ab556"
+  }
+}

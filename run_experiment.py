@@ -144,6 +144,7 @@ def run_split(
     patient_count: int,
     beam_width: int,
     search_horizon: int,
+    search_timeout_ms: float,
 ) -> dict[str, Any]:
     split_dir = output_root / split
     split_dir.mkdir(parents=True, exist_ok=True)
@@ -174,7 +175,8 @@ def run_split(
             for policy in (
                 FixedPipeline(),
                 ReactivePolicy(),
-                BeamSearchPolicy(width=beam_width, horizon=search_horizon),
+                BeamSearchPolicy(width=beam_width, horizon=search_horizon,
+                                 timeout_ms=search_timeout_ms),
             ):
                 simulator = EventSimulator(boxes, SERVICE_MEANS, horizon_minutes)
                 metrics, traces = simulator.run(episode_id, seed, patients, policy)
@@ -210,6 +212,7 @@ def main() -> None:
     parser.add_argument("--patients", type=int, default=18)
     parser.add_argument("--beam-width", type=int, default=20)
     parser.add_argument("--search-horizon", type=int, default=5)
+    parser.add_argument("--search-timeout-ms", type=float, default=50.0)
     parser.add_argument("--confirm-evaluation", action="store_true",
                         help="Confirm that the reserved evaluation split may be opened now.")
     args = parser.parse_args()
@@ -233,6 +236,7 @@ def main() -> None:
         "service_means_minutes": SERVICE_MEANS,
         "beam_width": args.beam_width,
         "search_horizon": args.search_horizon,
+        "search_timeout_ms": args.search_timeout_ms,
         "policies": list(EXPECTED_POLICIES),
         "source_sha256": source_sha256,
     }
@@ -249,7 +253,7 @@ def main() -> None:
         (split_dir / "run_config.json").write_text(
             json.dumps(split_config, ensure_ascii=False, indent=2), encoding="utf-8")
         reports.append(run_split(split, subset, args.output, args.horizon, args.patients,
-                                 args.beam_width, args.search_horizon))
+                                 args.beam_width, args.search_horizon, args.search_timeout_ms))
     evaluation_report = next((report for report in reports if report["split"] == "evaluation"), None)
     if evaluation_report is not None:
         write_csv(args.output / "main_table.csv", evaluation_report["summary"])

@@ -1,8 +1,8 @@
 {
-  "scenarios": 10,
+  "scenarios": 11,
   "policies": 3,
-  "scenario_policy_runs": 30,
-  "passed": 30,
+  "scenario_policy_runs": 33,
+  "passed": 33,
   "failed": 0,
   "results": [
     {
@@ -385,6 +385,45 @@
     {
       "scenario_id": "S10_specialized_box_preserved",
       "description": "A monitoring-only patient uses the specialized box, leaving the basic box available.",
+      "policy": "prioria_beam",
+      "status": "PASS",
+      "violations": "",
+      "patients_eligible": 2,
+      "assigned": 2,
+      "abandoned": 0,
+      "not_assigned_at_horizon": 0,
+      "invalid_assignment_attempts_rejected": 0,
+      "executed_incompatible_assignments": 0
+    },
+    {
+      "scenario_id": "S11_search_timeout_fallback",
+      "description": "A forced search timeout yields a feasible reactive action and records the fallback.",
+      "policy": "fixed_pipeline",
+      "status": "PASS",
+      "violations": "",
+      "patients_eligible": 2,
+      "assigned": 2,
+      "abandoned": 0,
+      "not_assigned_at_horizon": 0,
+      "invalid_assignment_attempts_rejected": 0,
+      "executed_incompatible_assignments": 0
+    },
+    {
+      "scenario_id": "S11_search_timeout_fallback",
+      "description": "A forced search timeout yields a feasible reactive action and records the fallback.",
+      "policy": "reactive",
+      "status": "PASS",
+      "violations": "",
+      "patients_eligible": 2,
+      "assigned": 2,
+      "abandoned": 0,
+      "not_assigned_at_horizon": 0,
+      "invalid_assignment_attempts_rejected": 0,
+      "executed_incompatible_assignments": 0
+    },
+    {
+      "scenario_id": "S11_search_timeout_fallback",
+      "description": "A forced search timeout yields a feasible reactive action and records the fallback.",
       "policy": "prioria_beam",
       "status": "PASS",
       "violations": "",

@@ -7,7 +7,8 @@ políticas sobre el mismo flujo de pacientes y los mismos recursos:
 1. `fixed_pipeline`: prioridad, FIFO y primer box compatible libre.
 2. `reactive`: prioridad, espera acumulada y disponibilidad esperada.
 3. `prioria_beam`: búsqueda en haz de horizonte limitado con replanificación y
-   prioridad estricta entre pacientes con box compatible disponible.
+   prioridad estricta entre pacientes con box compatible disponible. Si se
+   supera el límite de búsqueda, usa la acción reactiva segura y lo registra.
 
 No representa un hospital real ni realiza triage, diagnóstico o recomendaciones
 clínicas. Las capacidades de los boxes y los tiempos de atención son etiquetas y
@@ -93,6 +94,8 @@ uvicorn main:app --reload
 - `GET /health`
 - `GET /defaults`
 - `POST /simulate`
+
+La búsqueda usa un límite configurable de 50 ms por decisión (`search_timeout_ms`).
 
 La API permite explorar configuraciones sintéticas; las corridas confirmatorias
 deben usar el manifiesto versionado y el ejecutor experimental.

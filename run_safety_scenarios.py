@@ -37,6 +37,7 @@ class SafetyScenario:
     expected_no_assignments: bool = False
     expected_abandonment: tuple[str, int] | None = None
     expected_waiting_at_horizon: int | None = None
+    force_search_timeout: bool = False
 
 
 def patient(patient_id: str, priority: int, required: set[str], *, eligible_at: int = 0,
@@ -123,6 +124,12 @@ def scenarios() -> tuple[SafetyScenario, ...]:
             (basic, special), expected_first_patient="P01",
             expected_box_assignments=(("P01", "B02"), ("P02", "B01")),
         ),
+        SafetyScenario(
+            "S11_search_timeout_fallback",
+            "A forced search timeout yields a feasible reactive action and records the fallback.",
+            (patient("P01", 1, {"basic"}), patient("P02", 3, {"basic"})),
+            (basic,), expected_first_patient="P01", force_search_timeout=True,
+        ),
     )
 
 
@@ -157,7 +164,11 @@ def run() -> list[dict[str, Any]]:
     for scenario in scenarios():
         service_means = dict(scenario.expected_service)
         for policy_factory in POLICIES:
-            policy = policy_factory() if policy_factory is not BeamSearchPolicy else BeamSearchPolicy(20, 5)
+            if policy_factory is BeamSearchPolicy:
+                timeout = 0.0 if scenario.force_search_timeout else 50.0
+                policy = BeamSearchPolicy(20, 5, timeout_ms=timeout)
+            else:
+                policy = policy_factory()
             simulator = EventSimulator(scenario.boxes, service_means, scenario.horizon)
             metrics, trace = simulator.run(scenario.scenario_id, 20261124, scenario.patients, policy)
             assignments = event_assignments(trace)
@@ -199,6 +210,13 @@ def run() -> list[dict[str, Any]]:
                     check_beam_priority(trace)
                 except AssertionError:
                     violations.append("strict_priority_violation")
+                if scenario.force_search_timeout:
+                    fallback_logged = any(
+                        record.get("decision", {}).get("deliberation", {}).get("timeout_fallback") is True
+                        for record in trace if "decision" in record
+                    )
+                    if not fallback_logged:
+                        violations.append("timeout_fallback_not_logged")
 
             rows.append({
                 "scenario_id": scenario.scenario_id,

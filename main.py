@@ -54,6 +54,7 @@ class SimulationRequest(BaseModel):
     ])
     beam_width: int = Field(default=20, ge=1, le=100)
     search_horizon: int = Field(default=5, ge=1, le=15)
+    search_timeout_ms: float = Field(default=50.0, ge=0, le=10_000)
 
     @model_validator(mode="after")
     def check_scenario_configuration(self) -> "SimulationRequest":
@@ -203,7 +204,8 @@ def simulate(request: SimulationRequest) -> dict[str, Any]:
     all_metrics: list[dict[str, Any]] = []
     sample_traces: list[dict[str, Any]] = []
     policies = [FixedPipeline(), ReactivePolicy(),
-                BeamSearchPolicy(request.beam_width, request.search_horizon)]
+                BeamSearchPolicy(request.beam_width, request.search_horizon,
+                                 request.search_timeout_ms)]
     for scenario_index in range(request.scenarios):
         scenario_seed = request.seed + scenario_index
         patients, _ = generate_scenario(
