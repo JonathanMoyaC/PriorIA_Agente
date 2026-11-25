@@ -62,6 +62,27 @@ class PatientGenerationTests(unittest.TestCase):
         weights = gaussian_hour_weights(peak_hour=16, sigma_hours=4.0, baseline=0.15)
         self.assertEqual(max(range(24), key=weights.__getitem__), 16)
 
+    def test_demand_multiplier_scales_daily_cohort_and_mode_quotas(self) -> None:
+        for multiplier, expected_n in ((0.8, 80), (1.2, 120)):
+            config = load_fixture()
+            config["arrival"]["demand_multiplier"] = multiplier
+            patients = generate_patients(config)
+            self.assertEqual(len(patients), expected_n)
+            self.assertEqual(sum(p["triage_category"] == "C1" for p in patients),
+                             round(expected_n * config["triage_category_probabilities"]["C1"]))
+            self.assertEqual({mode: sum(p["arrival_mode"] == mode for p in patients)
+                              for mode in ("own_means", "ambulance", "police")},
+                             {"own_means": round(expected_n * 0.8),
+                              "ambulance": round(expected_n * 0.05),
+                              "police": expected_n - round(expected_n * 0.8)
+                              - round(expected_n * 0.05)})
+
+    def test_demand_multiplier_must_be_positive(self) -> None:
+        config = load_fixture()
+        config["arrival"]["demand_multiplier"] = 0
+        with self.assertRaisesRegex(ValueError, "mayor que cero"):
+            generate_patients(config)
+
 
 class WaitingAreaTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -128,6 +149,17 @@ class WaitingAreaTests(unittest.TestCase):
 
 
 class EndToEndSimulationTests(unittest.TestCase):
+    def test_simulation_applies_demand_multiplier_to_daily_volume(self) -> None:
+        config = load_fixture()
+        config["arrival"]["demand_multiplier"] = 0.8
+        summary, trace = simulate_day(config)
+        self.assertEqual(summary["base_daily_patients"], 100)
+        self.assertEqual(summary["demand_multiplier"], 0.8)
+        self.assertEqual(summary["generated"], 80)
+        self.assertEqual(summary["unresolved"], 0)
+        arrivals = [row for row in trace if row["event"] == "arrived"]
+        self.assertEqual(len(arrivals), 80)
+
     def test_one_hundred_patient_day_respects_routes_and_room_capacities(self) -> None:
         summary, trace = simulate_day(load_fixture())
         self.assertEqual(summary["generated"], 100)
