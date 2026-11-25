@@ -24,6 +24,15 @@ a boxes.
 - Después de categorizar, C1 va a reanimación, C2 a la sala C2 y C3–C5 a la sala
   general. Cada sala tiene cola FIFO independiente, con 24 y 36 sillas. Si no hay
   silla, el paciente espera de pie.
+- Cada médico activo queda asociado de forma fija a un box asignado en orden. En
+  consultas y reevaluaciones, el paciente se traslada al box de un médico libre
+  de la especialidad requerida, registrada en su perfil inicial a partir del
+  grupo de diagnóstico sintético. El médico permanece en su box durante la
+  atención.
+- Cuando un C1 ingresa a reanimación, se reserva el primer médico disponible,
+  cualquiera sea su especialidad, junto con una enfermera. El médico deja
+  temporalmente su box y vuelve a él al terminar la emergencia. El simulador
+  exige un médico y una enfermera para iniciar esa atención.
 - Ser llamado a consulta o reevaluación libera la silla. C4/C5 sin tratamiento
   se dan de alta por la puerta principal.
 - Si se indica tratamiento, el paciente vuelve a la sala C2 y espera una
@@ -42,8 +51,9 @@ a boxes.
   espera acumulada, categoría, edad y postura. El tiempo de tratamiento no se
   suma como espera y no genera abandono mientras la enfermera está atendiendo.
 - Configuración inicial de recursos: 2 puestos de admisión, 5 cabinas PriorIA,
-  2 estaciones de triage, 3 enfermeras/os de triage, 12 médicos (4 por
-  especialidad), 8 boxes con 8 enfermeras/os, 2 camas de reanimación, 36 sillas
+  2 estaciones de triage, 3 enfermeras/os de triage, 8 médicos activos (3
+  internistas, 3 traumatólogos y 2 cirujanos), 8 boxes con 8 enfermeras/os,
+  2 camas de reanimación, 36 sillas
   generales, 24 sillas C2. Las enfermeras/os de atención corresponden al pool
   configurable de 8 enfermeras/os asociado a los boxes; triage tiene 3 en el
   fixture. Estas dotaciones son supuestos configurables.
