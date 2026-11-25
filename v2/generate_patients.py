@@ -66,6 +66,7 @@ def config_template() -> dict[str, Any]:
         "deis_cause_probabilities_by_age": None,
         "arrival": {
             "profile": "gaussian_peak",
+            "demand_multiplier": 1.0,
             "peak_hour": 16,
             "sigma_hours": 4.0,
             "baseline": 0.15,
@@ -273,7 +274,15 @@ def sample_vitals(category: str, cause_group: str, rng: random.Random,
 
 
 def generate_patients(config: dict[str, Any]) -> list[dict[str, Any]]:
-    n = int(config["daily_patients"])
+    base_daily_patients = int(config["daily_patients"])
+    demand_multiplier = float(config.get("arrival", {}).get("demand_multiplier", 1.0))
+    if base_daily_patients < 1:
+        raise ValueError("daily_patients debe ser al menos 1.")
+    if not math.isfinite(demand_multiplier) or demand_multiplier <= 0:
+        raise ValueError("arrival.demand_multiplier debe ser un número finito mayor que cero.")
+    n = int(math.floor(base_daily_patients * demand_multiplier + 0.5))
+    if n < 1:
+        raise ValueError("El multiplicador produce menos de un paciente diario.")
     rng = random.Random(int(config["seed"]))
     age_probs = normalized(config["age_group_probabilities"], "Edad")
     category_probs = normalized(config["triage_category_probabilities"], "C1-C5")
