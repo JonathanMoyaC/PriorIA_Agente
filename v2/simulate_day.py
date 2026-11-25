@@ -38,10 +38,27 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
         general_chairs=int(resources["general_waiting_chairs"]),
         c2_chairs=int(resources["c2_waiting_chairs"]),
     )
-    doctors_free = {key: int(value) for key, value in
-                    resources["physicians_by_specialty"].items()}
+    physicians: list[dict[str, Any]] = []
+    physician_id_by_box: dict[str, dict[str, Any]] = {}
+    for specialty, count in resources["physicians_by_specialty"].items():
+        for _ in range(int(count)):
+            box_number = len(physicians) + 1
+            physician = {
+                "physician_id": f"MED-{box_number:02d}",
+                "specialty": specialty,
+                "box_id": f"BOX-{box_number:02d}",
+                "available": True,
+            }
+            physicians.append(physician)
+            physician_id_by_box[physician["physician_id"]] = physician
+    configured_boxes = int(resources["consultation_boxes"])
+    if len(physicians) != configured_boxes:
+        raise ValueError(
+            "Cada médico activo debe tener un box exclusivo: la suma de "
+            "physicians_by_specialty debe coincidir con consultation_boxes."
+        )
     admission_free = int(resources["admission_desks"])
-    boxes_free = int(resources["consultation_boxes"])
+    boxes_free = len(physicians)
     box_nurses_free = int(resources.get("box_nurses", boxes_free))
     resuscitation_free = int(resources["resuscitation_beds"])
 
@@ -141,6 +158,7 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
         record_occupancy()
         if p["triage_category"] == "C1":
             assign_c1_nurses(minute)
+            assign_c1_doctors(minute)
 
     def assign_c1_nurses(minute: int) -> None:
         """Send an available attention nurse to C1, using triage as last resort."""
@@ -164,6 +182,29 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
             patients[patient_id]["status"] = "c1_nurse_assigned_resuscitation"
             log(minute, "nurse_attended_c1", patient_id,
                 nurse_source=source, waiting_for="physician_or_resuscitation_bed")
+
+    def assign_c1_doctors(minute: int) -> None:
+        """Reserve the first free physician to respond to a C1 emergency."""
+        nonlocal boxes_free
+        c1_queue = sorted(
+            (pid for pid, item in waiting.items()
+             if patients[pid]["triage_category"] == "C1"
+             and item["task"] == "consult" and "physician_id" not in item),
+            key=lambda pid: (waiting[pid]["entered"], waiting[pid]["sequence"], pid),
+        )
+        for patient_id in c1_queue:
+            physician = next((item for item in physicians if item["available"]), None)
+            if physician is None:
+                break
+            physician["available"] = False
+            boxes_free -= 1
+            waiting[patient_id]["physician_id"] = physician["physician_id"]
+            patients[patient_id]["status"] = "c1_physician_assigned_resuscitation"
+            log(minute, "physician_attended_c1", patient_id,
+                physician_id=physician["physician_id"],
+                physician_specialty=physician["specialty"],
+                home_box=physician["box_id"],
+                waiting_for="resuscitation_bed")
 
     def leave_pretriage(patient_id: str, minute: int,
                         remove_from_triage_queue: bool) -> str:
@@ -232,11 +273,15 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
         patient_id = event["patient_id"]
         task = event["task"]
         resource = event["resource"]
-        specialty = event.get("specialty")
-        if specialty is not None:
-            doctors_free[specialty] += 1
-        if resource == "box":
+        physician_id = event.get("physician_id")
+        if physician_id is not None:
+            physician = physician_id_by_box[physician_id]
+            physician["available"] = True
             boxes_free += 1
+            if resource == "resuscitation":
+                log(minute, "physician_returned_to_box", patient_id,
+                    physician_id=physician_id, home_box=physician["box_id"])
+        if resource == "box":
             if event.get("box_nurse"):
                 box_nurses_free += 1
         elif resource == "resuscitation":
@@ -367,19 +412,25 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
                 continue
             task = waiting[patient_id]["task"]
             p = patients[patient_id]
-            specialty = config["specialty_by_cause"].get(p["deis_cause_group"])
-            if specialty is None or doctors_free.get(specialty, 0) <= 0:
-                continue
+            required_specialty = p["required_specialty"]
             if task == "consult" and p["triage_category"] == "C1":
                 if resuscitation_free <= 0:
                     continue
                 nurse_source = waiting[patient_id].get("nurse_source")
-                if nurse_source is None:
+                physician_id = waiting[patient_id].get("physician_id")
+                if nurse_source is None or physician_id is None:
                     continue
+                physician = physician_id_by_box[physician_id]
                 resource = "resuscitation"
             elif task in {"consult", "reevaluation"}:
                 if boxes_free <= 0 or box_nurses_free <= 0:
                     continue
+                physician = next((item for item in physicians
+                                  if item["available"]
+                                  and item["specialty"] == required_specialty), None)
+                if physician is None:
+                    continue
+                physician_id = physician["physician_id"]
                 resource = "box"
                 nurse_source = "attention"
             else:
@@ -389,9 +440,9 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
             if resource == "box":
                 boxes_free -= 1
                 box_nurses_free -= 1
+                physician["available"] = False
             else:
                 resuscitation_free -= 1
-            doctors_free[specialty] -= 1
 
             if task == "consult":
                 spec = care["consultation_minutes_by_category"][p["triage_category"]]
@@ -407,13 +458,19 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
 
             care_active.append({
                 "finish": minute + duration, "patient_id": patient_id,
-                "task": task, "resource": resource, "specialty": specialty,
+                "task": task, "resource": resource,
+                "specialty": physician["specialty"],
+                "physician_id": physician_id,
                 "box_nurse": resource == "box",
                 "nurse_source": nurse_source if resource == "resuscitation" else None,
+                "home_box": physician["box_id"],
             })
             p["status"] = f"in_{task}"
             log(minute, "care_stage_started", patient_id, task=task,
-                specialty=specialty, resource=resource,
+                specialty=physician["specialty"], required_specialty=required_specialty,
+                physician_id=physician_id, home_box=physician["box_id"],
+                patient_moves_to=physician["box_id"] if resource == "box" else "resuscitation",
+                resource=resource,
                 duration_minutes=duration,
                 nurse_source=nurse_source if resource == "resuscitation" else None)
 
@@ -458,6 +515,8 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
             log(minute, "arrived", patient_id, entry_route=entry,
                 arrival_mode=p["arrival_mode"], age_group=p["age_group"],
                 cause_group=p["deis_cause_group"], uses_prioria=p["uses_prioria"],
+                probable_diagnosis_group=p["probable_diagnosis_group"],
+                required_specialty=p["required_specialty"],
                 adoption_probability=p["prioria_adoption_probability"])
 
         finished_admission = [e for e in admission_active if e["finish"] <= minute]
@@ -495,6 +554,7 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
         dispatch_admission(minute)
         dispatch_triage(minute)
         assign_c1_nurses(minute)
+        assign_c1_doctors(minute)
         dispatch_care(minute)
         dispatch_treatments(minute)
 
@@ -544,6 +604,13 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
         "abandonment_rate": round(statuses.count("abandoned") / len(statuses), 4),
         "unresolved": statuses.count("unresolved"),
         "triage_category_counts": category_counts,
+        "physicians_active": len(physicians),
+        "physician_box_assignments": [
+            {"physician_id": physician["physician_id"],
+             "specialty": physician["specialty"],
+             "box_id": physician["box_id"]}
+            for physician in physicians
+        ],
         "prioria_users": sum(bool(p["uses_prioria"]) for p in patients.values()),
         "prioria_users_by_age": {
             group: sum(bool(p["uses_prioria"]) and p["age_group"] == group
@@ -578,7 +645,8 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
     patient_rows = [{k: p[k] for k in (
         "patient_id", "arrival_minute", "age", "age_group", "arrival_mode",
         "prioria_adoption_probability", "uses_prioria", "triage_category",
-        "deis_cause_group", "chief_complaint", "heart_rate", "respiratory_rate",
+        "deis_cause_group", "probable_diagnosis_group", "required_specialty",
+        "chief_complaint", "heart_rate", "respiratory_rate",
         "temperature_c", "spo2_pct", "systolic_bp", "diastolic_bp", "status",
         "total_wait_minutes", "first_consult_start", "terminal_minute",
         "treatments_received", "treatment_failures", "stages_completed",
