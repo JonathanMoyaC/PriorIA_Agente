@@ -78,7 +78,8 @@
       "adult_young": 0.2,
       "adult_middle": 0.0,
       "adult_older": -0.25
-    }
+    },
+    "demand_multiplier": 1.0
   },
   "resources": {
     "physicians_by_specialty": {
