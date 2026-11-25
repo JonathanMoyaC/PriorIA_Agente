@@ -30,6 +30,9 @@ def main() -> None:
     if base.get("metadata", {}).get("test_fixture") is not True:
         parser.error("Este ejecutor solo acepta configuraciones marcadas como fixture de prueba.")
     rows = []
+    base_daily_patients = int(base["daily_patients"])
+    demand_multiplier = float(base.get("arrival", {}).get("demand_multiplier", 1.0))
+    patients_per_day = int(base_daily_patients * demand_multiplier + 0.5)
     for offset in range(args.replications):
         config = dict(base)
         config["seed"] = args.first_seed + offset
@@ -37,6 +40,8 @@ def main() -> None:
         rows.append({
             "replication": offset + 1,
             "seed": config["seed"],
+            "base_daily_patients": summary["base_daily_patients"],
+            "demand_multiplier": summary["demand_multiplier"],
             "generated": summary["generated"],
             "discharged": summary["discharged"],
             "hospitalized": summary["hospitalized"],
@@ -61,7 +66,7 @@ def main() -> None:
         writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
         writer.writeheader()
         writer.writerows(rows)
-    print(f"Corridas: {len(rows)} jornadas × {base['daily_patients']} pacientes")
+    print(f"Corridas: {len(rows)} jornadas × {patients_per_day} pacientes")
     print(f"Resultados: {args.output}")
     print(f"Abandonos totales: {sum(row['abandoned'] for row in rows)}")
     print(f"Jornadas sin casos sin resolver: {sum(row['unresolved'] == 0 for row in rows)}/{len(rows)}")
