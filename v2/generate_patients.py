@@ -88,9 +88,9 @@ def config_template() -> dict[str, Any]:
         },
         "resources": {
             "physicians_by_specialty": {
-                "internal_medicine": 4,
-                "traumatology": 4,
-                "surgery": 4
+                "internal_medicine": 3,
+                "traumatology": 3,
+                "surgery": 2
             },
             "box_nurses": 8,
             "consultation_boxes": 8,
@@ -289,6 +289,7 @@ def generate_patients(config: dict[str, Any]) -> list[dict[str, Any]]:
         if age not in cause_by_age:
             raise ValueError(f"Falta distribución DEIS de causas para {age}.")
         normalized(cause_by_age[age], f"Causas DEIS ({age})")
+    specialty_by_cause = config["specialty_by_cause"]
 
     age_counts = exact_daily_counts(n, age_probs)
     age_groups = [age for age, count in age_counts.items() for _ in range(count)]
@@ -320,6 +321,12 @@ def generate_patients(config: dict[str, Any]) -> list[dict[str, Any]]:
         age = rng.randint(low_age, high_age)
         cause_probs = normalized(cause_by_age[age_group], f"Causas ({age_group})")
         cause_group = rng.choices(list(cause_probs), weights=list(cause_probs.values()), k=1)[0]
+        required_specialty = specialty_by_cause.get(cause_group)
+        if required_specialty is None:
+            raise ValueError(
+                f"No se definió especialidad médica para el grupo de diagnóstico "
+                f"sintético '{cause_group}'."
+            )
         complaints = COMPLAINTS_BY_CAUSE.get(cause_group, (cause_group.replace("_", " "),))
         complaint_text = rng.choice(complaints)
         vitals = sample_vitals(category, cause_group, rng,
@@ -346,6 +353,8 @@ def generate_patients(config: dict[str, Any]) -> list[dict[str, Any]]:
             "arrival_mode": mode,
             "triage_category": category,
             "deis_cause_group": cause_group,
+            "probable_diagnosis_group": cause_group,
+            "required_specialty": required_specialty,
             "chief_complaint": complaint_text,
             **vitals,
             "prioria_adoption_probability": round(prioria_prob, 4),
