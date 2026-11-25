@@ -82,9 +82,9 @@
   },
   "resources": {
     "physicians_by_specialty": {
-      "internal_medicine": 4,
-      "traumatology": 4,
-      "surgery": 4
+      "internal_medicine": 3,
+      "traumatology": 3,
+      "surgery": 2
     },
     "box_nurses": 8,
     "consultation_boxes": 8,
@@ -193,7 +193,7 @@
     "test_fixture": true,
     "assumption_notes": [
       "Fixture exclusivamente sintético para prueba mecánica; no representa una estimación DEIS ni prevalencias clínicas.",
-      "Adopción de PriorIA, asignación de tratamientos, evolución, dotaciones de enfermería y desenlaces son supuestos configurables, no recomendaciones clínicas.",
+      "Adopción de PriorIA, grupos de diagnóstico probable, especialidades requeridas, asignación de tratamientos, evolución, dotaciones de enfermería y desenlaces son supuestos configurables, no recomendaciones clínicas.",
       "Las probabilidades de categoría, edad, causa y signos vitales aún no están calibradas con DEIS."
     ]
   },
