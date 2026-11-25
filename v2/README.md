@@ -8,10 +8,14 @@ a boxes.
 
 - Cohorte configurable de 100 pacientes, grupos etarios 18–39, 40–64 y 65+,
   categorías C1–C5 y grupos de causas. Los valores del fixture son sintéticos.
-- Llegadas a lo largo de 24 horas con máximo esperado a las 16:00; cuotas diarias
-  80% por medios propios, 5% ambulancia y 15% policía. Todo paciente C1 se
-  asigna a ambulancia; la configuración falla explícitamente si la cuota C1
-  supera las plazas de ambulancia disponibles.
+- `daily_patients` fija el volumen base y `arrival.demand_multiplier` lo escala:
+  con base 100, 0,8 genera 80 pacientes y 1,2 genera 120. El multiplicador
+  cambia el volumen, no la forma temporal: conserva las mismas probabilidades
+  relativas por hora y el máximo esperado a las 16:00. Los conteos por hora
+  varían aleatoriamente entre corridas.
+- Las cuotas de llegada se mantienen en 80% por medios propios, 5% ambulancia y
+  15% policía. Todo paciente C1 se asigna a ambulancia; la configuración falla
+  explícitamente si la cuota C1 supera las plazas de ambulancia disponibles.
 - Tras admisión, los pacientes esperan en la sala general para PriorIA o triage
   humano y ocupan una silla FIFO si hay disponibilidad. Al ser llamados a
   categorización, liberan la silla.
