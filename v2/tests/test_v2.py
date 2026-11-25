@@ -19,7 +19,8 @@ def load_fixture() -> dict:
 
 class PatientGenerationTests(unittest.TestCase):
     def test_cohort_counts_complaints_vitals_and_adoption_rule(self) -> None:
-        patients = generate_patients(load_fixture())
+        config = load_fixture()
+        patients = generate_patients(config)
         self.assertEqual(len(patients), 100)
         self.assertEqual({mode: sum(p["arrival_mode"] == mode for p in patients)
                           for mode in ("own_means", "ambulance", "police")},
@@ -31,6 +32,10 @@ class PatientGenerationTests(unittest.TestCase):
                             if p["triage_category"] == "C1"))
         expected_adoption = {"adult_young": 0.8, "adult_middle": 0.6, "adult_older": 0.35}
         for patient in patients:
+            self.assertEqual(patient["probable_diagnosis_group"],
+                             patient["deis_cause_group"])
+            self.assertEqual(patient["required_specialty"],
+                             config["specialty_by_cause"][patient["deis_cause_group"]])
             self.assertAlmostEqual(patient["prioria_adoption_probability"],
                                    expected_adoption[patient["age_group"]])
             if patient["uses_prioria"]:
@@ -139,6 +144,25 @@ class EndToEndSimulationTests(unittest.TestCase):
             self.assertEqual(row["destination"], expected)
         self.assertTrue(all(r["seat_released"] for r in trace
                             if r["event"] == "called_to_triage"))
+        patient_by_id = {r["patient_id"]: r for r in trace
+                         if r["event"] == "patient_summary"}
+        c1_ids = {pid for pid, patient in patient_by_id.items()
+                  if patient["triage_category"] == "C1"}
+        self.assertEqual(summary["physicians_active"], 8)
+        self.assertEqual([row["box_id"] for row in summary["physician_box_assignments"]],
+                         [f"BOX-{i:02d}" for i in range(1, 9)])
+        self.assertEqual({r["patient_id"] for r in trace
+                          if r["event"] == "physician_attended_c1"}, c1_ids)
+        self.assertEqual({r["patient_id"] for r in trace
+                          if r["event"] == "physician_returned_to_box"}, c1_ids)
+        self.assertEqual({r["patient_id"] for r in trace
+                          if r["event"] == "nurse_attended_c1"}, c1_ids)
+        physician_boxes = {}
+        for row in (r for r in trace if r["event"] == "care_stage_started"):
+            physician_boxes.setdefault(row["physician_id"], row["home_box"])
+            self.assertEqual(physician_boxes[row["physician_id"]], row["home_box"])
+            if row["resource"] == "box" and row["patient_id"] not in c1_ids:
+                self.assertEqual(row["required_specialty"], row["specialty"])
         nursing_events = [r for r in trace
                           if r["event"] == "treatment_nurse_procedure_started"]
         observation_events = [r for r in trace
@@ -226,13 +250,19 @@ class EndToEndSimulationTests(unittest.TestCase):
         self.assertEqual(len(c1_nurse_events), 1)
         self.assertEqual(c1_nurse_events[0]["nurse_source"], "attention")
 
+    def test_active_physicians_require_one_exclusive_box_each(self) -> None:
+        config = load_fixture()
+        config["resources"]["consultation_boxes"] = 7
+        with self.assertRaisesRegex(ValueError, "box exclusivo"):
+            simulate_day(config)
+
     def test_congestion_exercises_standing_and_abandonment(self) -> None:
         config = copy.deepcopy(load_fixture())
         config["resources"].update({
             "physicians_by_specialty": {
                 "internal_medicine": 1, "traumatology": 1, "surgery": 1},
-            "consultation_boxes": 1,
-            "box_nurses": 1,
+            "consultation_boxes": 3,
+            "box_nurses": 3,
             "general_waiting_chairs": 1,
             "c2_waiting_chairs": 1,
         })
