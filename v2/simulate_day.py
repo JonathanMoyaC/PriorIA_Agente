@@ -595,6 +595,8 @@ def simulate_day(config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str,
     summary = {
         "scenario_id": config.get("scenario_id", "v2"),
         "seed": int(config["seed"]),
+        "base_daily_patients": int(config["daily_patients"]),
+        "demand_multiplier": float(config.get("arrival", {}).get("demand_multiplier", 1.0)),
         "generated": len(patients),
         "discharged": statuses.count("discharged"),
         "hospitalized": statuses.count("hospitalized"),
