@@ -1,0 +1,476 @@
+{
+  "layout_id": "prioria_floorplan_grid_v1",
+  "grid": {
+    "columns": 66,
+    "column_labels": "A-BN",
+    "rows": 41,
+    "row_labels": "01-41",
+    "image_width_px": 1585,
+    "image_height_px": 992,
+    "nominal_cell_width_px": 24.015152,
+    "nominal_cell_height_px": 24.195122,
+    "coordinate_format": "column_label + two_digit_row",
+    "coordinate_reference": "center of grid cell",
+    "units": "image grid cells; not physical distance"
+  },
+  "movement_model": {
+    "initial_speed_px_per_second": 9.645054201,
+    "speed_status": "calibrated so the longest entrance-to-admission route takes 60 seconds",
+    "calibration": {
+      "route_id": "farthest_walk_in_entrance_to_admission_desk",
+      "route_coordinates": ["AB01", "AF08", "AM14"],
+      "route_distance_px": 578.703252,
+      "target_travel_seconds": 60,
+      "derived_speed_px_per_second": 9.645054201
+    },
+    "distance_unit": "pixels in the source floorplan image",
+    "path_metric": "sum of orthogonal cell-to-cell distances along the route",
+    "diagonal_movement": false,
+    "cell_step_distance": {
+      "horizontal_px": 24.015152,
+      "vertical_px": 24.195122
+    },
+    "travel_time_formula": "route_distance_px / initial_speed_px_per_second",
+    "walkability_assumption": "User-specified route segments are considered traversable; any missing corridor rectangles can be added to the walkable map."
+  },
+  "waiting_chairs": {
+    "general": {
+      "capacity": 72,
+      "coordinates": [
+        "C02", "E02", "F02", "H02", "J02", "L02",
+        "C05", "E05", "F05", "H05", "J05", "L05",
+        "C07", "E07", "F07", "H07", "J07", "L07",
+        "C09", "E09", "F09", "H09", "J09", "L09",
+        "C11", "E11", "F11", "H11", "J11", "L11",
+        "C13", "E13", "F13", "H13", "J13", "L13",
+        "P02", "R02", "T02", "U02", "W02", "Y02",
+        "P05", "R05", "T05", "U05", "W05", "Y05",
+        "P07", "R07", "T07", "U07", "W07", "Y07",
+        "P09", "R09", "T09", "U09", "W09", "Y09",
+        "P11", "R11", "T11", "U11", "W11", "Y11",
+        "P13", "R13", "T13", "U13", "W13", "Y13"
+      ]
+    },
+    "c2": {
+      "capacity": 30,
+      "coordinates": [
+        "BD30", "BF30", "BH30", "BJ30", "BL30",
+        "BD32", "BF32", "BH32", "BJ32", "BL32",
+        "BD34", "BF34", "BH34", "BJ34", "BL34",
+        "BD37", "BF37", "BH37", "BJ37", "BL37",
+        "AM29", "AL29", "AJ29", "N29", "L29",
+        "AB29", "AA29", "Y29", "F29", "D29"
+      ]
+    }
+  },
+  "resource_locations": {
+    "own_means_access_and_exit": {
+      "coordinates": ["AB01", "AC01", "AD01", "AE01", "AF01"]
+    },
+    "admission_desks": {
+      "configurable_count": {"minimum": 1, "maximum": 3},
+      "default_count": 2,
+      "positions": [
+        {"id": "admission_1", "coordinate": "AM11"},
+        {"id": "admission_2", "coordinate": "AM14"},
+        {"id": "admission_3", "coordinate": "AM10"}
+      ]
+    },
+    "prioria_cabins": {
+      "configurable_count": {"minimum": 1, "maximum": 5},
+      "default_count": 5,
+      "positions": [
+        {"id": "cabin_1", "coordinate": "D19"},
+        {"id": "cabin_2", "coordinate": "I19"},
+        {"id": "cabin_3", "coordinate": "N19"},
+        {"id": "cabin_4", "coordinate": "X19"},
+        {"id": "cabin_5", "coordinate": "AC19"}
+      ]
+    },
+    "triage_seats": {
+      "configurable_count": {"minimum": 1, "maximum": 2},
+      "default_count": 2,
+      "positions": [
+        {"id": "triage_1", "coordinate": "BG18"},
+        {"id": "triage_2", "coordinate": "BK18"}
+      ]
+    },
+    "nurse_station_seats": {
+      "configurable_count": {"minimum": 1, "maximum": 3},
+      "positions": [
+        {"id": "nurse_station_1", "coordinate": "AU35"},
+        {"id": "nurse_station_2", "coordinate": "AU33"},
+        {"id": "nurse_station_3", "coordinate": "AU32"}
+      ]
+    },
+    "resuscitation_area": {
+      "entrance": "BI19",
+      "beds": [
+        {"id": "resuscitation_bed_1", "coordinate": "BG27"},
+        {"id": "resuscitation_bed_2", "coordinate": "BK27"}
+      ]
+    },
+    "physician_boxes": {
+      "configurable_count": {"minimum": 1, "maximum": 8},
+      "default_count": 8,
+      "positions": [
+        {"id": "box_1", "coordinate": "AK34"},
+        {"id": "box_2", "coordinate": "AK23"},
+        {"id": "box_3", "coordinate": "Y34"},
+        {"id": "box_4", "coordinate": "AC23"},
+        {"id": "box_5", "coordinate": "L34"},
+        {"id": "box_6", "coordinate": "P23"},
+        {"id": "box_7", "coordinate": "C34"},
+        {"id": "box_8", "coordinate": "C23"}
+      ]
+    }
+  },
+  "staff_work_positions": {
+    "admissionists": {
+      "positions": [
+        {"id": "admissionist_1", "idle": "AO12"},
+        {"id": "admissionist_2", "idle": "AO15"},
+        {"id": "admissionist_3", "idle": "AO10"}
+      ]
+    },
+    "triage_nurses": {
+      "positions": [
+        {"id": "triage_nurse_1", "idle": "BI13"},
+        {"id": "triage_nurse_2", "idle": "BJ17"}
+      ]
+    },
+    "attention_nurses": {
+      "starts_at_any": "nurse_station_seats",
+      "waypoints": ["AU30", "BA33"],
+      "procedure_position": {
+        "relative_to": "patient_position",
+        "column_offset": 0,
+        "row_offset": 1,
+        "meaning": "one grid cell below the patient"
+      },
+      "return_to": "nurse_station_seats"
+    },
+    "physicians_by_box": {
+      "box_1": {"idle": "AK34", "exam": "AM35", "return_to": "AK34"},
+      "box_2": {"idle": "AK23", "exam": "AM24", "return_to": "AK23"},
+      "box_3": {"idle": "Y34", "exam": "AA36", "return_to": "Y34"},
+      "box_4": {"idle": "AC23", "exam": "Z26", "return_to": "AC23"},
+      "box_5": {"idle": "L34", "exam": "N36", "return_to": "L34"},
+      "box_6": {"idle": "P23", "exam": "M26", "return_to": "P23"},
+      "box_7": {"idle": "C34", "exam": "E36", "return_to": "C34"},
+      "box_8": {"idle": "C23", "exam": "E26", "return_to": "C23"}
+    },
+    "exam_timing": "physician_moves_from_idle_to_exam_position_after_patient_reclines_and_returns_when_attention_ends"
+  },
+  "walkable_areas": {
+    "rectangle_semantics": "inclusive row/column cells between both corners; all cells are walkable",
+    "groups": [
+      {
+        "id": "area_01",
+        "rectangles": [
+          {"from": "M02", "to": "O02"},
+          {"from": "M14", "to": "O14"}
+        ]
+      },
+      {
+        "id": "area_02",
+        "rectangles": [{"from": "B15", "to": "Y15"}]
+      },
+      {
+        "id": "area_03",
+        "rectangles": [
+          {"from": "Q16", "to": "V16"},
+          {"from": "Q20", "to": "V20"}
+        ]
+      },
+      {
+        "id": "area_04",
+        "rectangles": [
+          {"from": "Z02", "to": "AG02"},
+          {"from": "Z15", "to": "AG15"}
+        ]
+      },
+      {
+        "id": "area_05",
+        "assumption": "AH15,AL15 was interpreted as the inclusive range AH15-AL15",
+        "rectangles": [
+          {"from": "AH08", "to": "AL08"},
+          {"from": "AH15", "to": "AL15"}
+        ]
+      },
+      {
+        "id": "area_06",
+        "rectangles": [
+          {"from": "AE16", "to": "AL16"},
+          {"from": "AE20", "to": "AL20"}
+        ]
+      },
+      {
+        "id": "area_07",
+        "rectangles": [
+          {"from": "AN16", "to": "AU16"},
+          {"from": "AN20", "to": "AU20"}
+        ]
+      },
+      {
+        "id": "area_08",
+        "rectangles": [
+          {"from": "AV12", "to": "BB12"},
+          {"from": "AV20", "to": "BB20"}
+        ]
+      },
+      {
+        "id": "area_09",
+        "rectangles": [
+          {"from": "AY21", "to": "BC21"},
+          {"from": "AY38", "to": "BC38"}
+        ]
+      },
+      {
+        "id": "area_10",
+        "rectangles": [
+          {"from": "BD35", "to": "BM35"},
+          {"from": "BD36", "to": "BM36"}
+        ]
+      },
+      {
+        "id": "area_11",
+        "rectangles": [
+          {"from": "A29", "to": "AX29"},
+          {"from": "A30", "to": "AX30"}
+        ]
+      },
+      {
+        "id": "area_12",
+        "rectangles": [
+          {"from": "R21", "to": "V21"},
+          {"from": "R38", "to": "V38"}
+        ]
+      },
+      {
+        "id": "area_13",
+        "rectangles": [
+          {"from": "AE21", "to": "AI21"},
+          {"from": "AE38", "to": "AI38"}
+        ]
+      }
+    ]
+  },
+  "corridor_zones": {
+    "axis": "grid row number",
+    "external": {"condition": "row < 20"},
+    "internal": {"condition": "row > 20"},
+    "boundary_row_20": "unclassified_pending_definition",
+    "standing_location_rule": "choose any declared walkable cell in the applicable corridor zone"
+  },
+  "route_definitions": [
+    {
+      "id": "walk_in_patient_to_admission_or_prioria",
+      "status": "route_specified; movement engine not yet implemented",
+      "starts_at_any": "own_means_access_and_exit",
+      "common_waypoints": ["AF08"],
+      "decision": "choose_prioria_or_self_registration",
+      "branches": [
+        {
+          "id": "self_registration",
+          "resource_type": "admission_desks",
+          "resource_condition": "active_and_available",
+          "selection_policy_if_multiple_available": "to_be_defined",
+          "destinations_by_resource": {
+            "admission_1": "AM12",
+            "admission_2": "AM14",
+            "admission_3": "AM10"
+          }
+        },
+        {
+          "id": "prioria",
+          "waypoints": ["AF15"],
+          "resource_type": "prioria_cabins",
+          "resource_condition": "available",
+          "selection_policy_if_multiple_available": "to_be_defined",
+          "destinations_by_resource": {
+            "cabin_1": "D16",
+            "cabin_2": "H16",
+            "cabin_3": "P18",
+            "cabin_4": "X16",
+            "cabin_5": "AC16"
+          }
+        }
+      ]
+    },
+    {
+      "id": "admission_to_waiting_chair",
+      "status": "route_specified; movement engine not yet implemented",
+      "starts_at_any": "admission_desks",
+      "waypoints": ["AA11"],
+      "destination": "first_available_chair_in_category_routed_waiting_room",
+      "seat_assignment": "FIFO"
+    },
+    {
+      "id": "prioria_cabin_to_waiting_chair",
+      "status": "route_specified; movement engine not yet implemented",
+      "starts_at_any": "prioria_cabins",
+      "waypoints": ["N15"],
+      "destination": "first_available_chair_in_category_routed_waiting_room",
+      "seat_assignment": "FIFO"
+    },
+    {
+      "id": "triage_return_c3_c4_c5_to_general_waiting",
+      "status": "route_specified; movement engine not yet implemented",
+      "start": "BC16",
+      "waypoints": ["AW18", "AL18", "AA11"],
+      "destination": "first_available_general_waiting_chair",
+      "seat_assignment": "FIFO",
+      "if_no_chair_available": {
+        "standing_location_zone": "external",
+        "cell_constraint": "declared_walkable_cell_with_row_less_than_20"
+      },
+      "categories": ["C3", "C4", "C5"]
+    },
+    {
+      "id": "triage_return_c2_to_c2_waiting",
+      "status": "route_specified; movement engine not yet implemented",
+      "start": "BC16",
+      "waypoints": ["BA21", "B33"],
+      "destination": "first_available_c2_waiting_chair",
+      "seat_assignment": "FIFO",
+      "if_no_chair_available": {
+        "standing_location_zone": "internal",
+        "cell_constraint": "declared_walkable_cell_with_row_greater_than_20"
+      },
+      "category": "C2"
+    },
+    {
+      "id": "waiting_chair_to_exit_or_triage_or_box",
+      "status": "route_specified; movement engine not yet implemented",
+      "start": "AA14",
+      "decision": "abandon_or_answer_triage_call_or_answer_box_call",
+      "branches": [
+        {
+          "id": "abandon",
+          "destination": "AD01"
+        },
+        {
+          "id": "triage_call",
+          "waypoints": ["AL18", "AW18"],
+          "destination": "BC16"
+        },
+        {
+          "id": "box_call_1_to_4",
+          "waypoints": ["AF15", "AG20"],
+          "destinations_by_box": {
+            "box_1": {"door": "AI37", "bed": "AO37"},
+            "box_2": {"door": "AI26", "bed": "AO26"},
+            "box_3": {"door": "AE32", "bed": "AB37"},
+            "box_4": {"door": "AE26", "bed": "X26"}
+          }
+        },
+        {
+          "id": "box_call_5_to_8",
+          "waypoints": ["T15", "T20"],
+          "destinations_by_box": {
+            "box_5": {"door": "R32", "bed": "P37"},
+            "box_6": {"door": "R26", "bed": "L26"},
+            "box_7": {
+              "waypoints": ["R29", "I29"],
+              "door": "I30",
+              "bed": "F37"
+            },
+            "box_8": {
+              "waypoints": ["R29", "B29"],
+              "door": "B28",
+              "bed": "G26"
+            }
+          }
+        }
+      ],
+      "potential_coordinate_conflicts": []
+    },
+    {
+      "id": "c2_waiting_chair_to_box",
+      "status": "route_specified; movement engine not yet implemented",
+      "start": "any_occupied_c2_chair",
+      "release_chair_on_departure": true,
+      "common_waypoints": ["AY29"],
+      "branches": [
+        {
+          "id": "boxes_1_to_4",
+          "waypoints": ["AG29"],
+          "destinations_by_box": {
+            "box_1": {"door": "AI37", "bed": "AO37"},
+            "box_2": {"door": "AI26", "bed": "AO26"},
+            "box_3": {"door": "AE32", "bed": "AB37"},
+            "box_4": {"door": "AE26", "bed": "X26"}
+          }
+        },
+        {
+          "id": "boxes_5_and_6",
+          "waypoints": ["R29"],
+          "destinations_by_box": {
+            "box_5": {"door": "R32", "bed": "P37"},
+            "box_6": {"door": "R26", "bed": "L26"}
+          }
+        },
+        {
+          "id": "boxes_7_and_8",
+          "waypoints": ["H29", "R29"],
+          "destinations_by_box": {
+            "box_7": {
+              "waypoints": ["I29"],
+              "door": "I30",
+              "bed": "F37"
+            },
+            "box_8": {
+              "waypoints": ["B29"],
+              "door": "B28",
+              "bed": "G26"
+            }
+          }
+        }
+      ],
+      "bed_coordinate_note": "The latest route description restated Box 3 bed as X26 and Box 4 bed as AO37, conflicting with the prior explicit correction. This route retains the corrected shared locations (Box 3 AB37, Box 4 X26) pending confirmation."
+    },
+    {
+      "id": "box_to_c2_waiting_after_attention",
+      "status": "route_specified; movement engine not yet implemented",
+      "destination": "first_available_c2_waiting_chair",
+      "seat_assignment": "FIFO",
+      "if_no_chair_available": {
+        "standing_location_zone": "internal",
+        "cell_constraint": "declared_walkable_cell_with_row_greater_than_20"
+      },
+      "common_waypoints_after_box_group": ["AG29", "AY29", "BA33"],
+      "routes_by_box": {
+        "box_1": {"start": "AI37", "waypoints": ["AG29", "AY29", "BA33"]},
+        "box_2": {"start": "AI26", "waypoints": ["AG29", "AY29", "BA33"]},
+        "box_3": {"start": "AE32", "waypoints": ["AG29", "AY29", "BA33"]},
+        "box_4": {"start": "AE26", "waypoints": ["AG29", "AY29", "BA33"]},
+        "box_5": {"start": "R32", "waypoints": ["R29", "AG29", "AY29", "BA33"]},
+        "box_6": {"start": "R26", "waypoints": ["R29", "AG29", "AY29", "BA33"]},
+        "box_7": {"start": "I30", "waypoints": ["R29", "AG29", "AY29", "BA33"]},
+        "box_8": {"start": "B28", "waypoints": ["R29", "AG29", "AY29", "BA33"]}
+      }
+    },
+    {
+      "id": "ambulance_parking_1_to_resuscitation",
+      "status": "route_specified; movement engine not yet implemented",
+      "start": "BC03",
+      "waypoints": ["AZ11", "BC16", "BI19"],
+      "resource_type": "resuscitation_beds",
+      "resource_condition": "available",
+      "selection_policy": "choose_first_available_bed",
+      "destinations_by_resource": {
+        "resuscitation_bed_1": "BG27",
+        "resuscitation_bed_2": "BK27"
+      }
+    },
+    {
+      "id": "resuscitation_to_hospitalization",
+      "status": "route_specified; movement engine not yet implemented",
+      "start": "any_occupied_resuscitation_bed",
+      "waypoints": ["BC26"],
+      "destination": "BA38",
+      "outcome": "hospitalized"
+    }
+  ]
+}
