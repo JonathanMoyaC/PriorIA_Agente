@@ -1,7 +1,7 @@
-# PriorIA V4.6 · Simulador e indicadores
+# PriorIA V4.11 · Simulador e indicadores
 
 Paquete ejecutable con FastAPI, Docker Compose, Canvas y el motor de simulación de
-V2. Incluye el desglose de categorización por ruta, gráficos de indicadores y demora de 2–4 horas para la asignación de cama. También conserva la regla corregida para pacientes C1, prioridad de reevaluaciones C4/C5,
+V2. Incluye el desglose de categorización por ruta, gráficos legibles, recuento de pacientes que usaron PriorIA, demora de 2–4 horas para la asignación de cama y prioridad clínica estricta C1→C2→C3→reevaluación→C4→C5 y bifurcación previa a admisión: cabina PriorIA directa o admisión seguida de triage humano. El tablero conserva dos columnas compactas; las barras clave son más gruesas sin ampliar las tarjetas. También conserva la regla corregida para pacientes C1, prioridad de reevaluaciones C4/C5,
 asignación rotativa de cabinas y una pestaña de indicadores para revisar utilización,
 esperas, LOS y estados de pacientes. El plano no muestra grilla ni una batería visual de rutas.
 
