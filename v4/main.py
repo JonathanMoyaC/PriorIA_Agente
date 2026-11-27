@@ -17,7 +17,7 @@ ASSETS = Path(__file__).resolve().parent / "assets"
 sys.path.insert(0, str(ROOT))
 
 from v4.simulation import BASE_PATIENTS_PER_DAY, dashboard_data, simulate_period  # noqa: E402
-from v4.visualization import build_period_frames  # noqa: E402
+from v4.visualization import build_period_frames, build_route_test_cases  # noqa: E402
 
 app = FastAPI(title="PriorIA V4 Simulator", version="4.1.0")
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -61,6 +61,12 @@ def index() -> FileResponse:
 @app.get("/assets/floorplan.jpg")
 def floorplan() -> FileResponse:
     return FileResponse(ASSETS / "Plano_Unidad_Urgencias.jpg", media_type="image/jpeg")
+
+
+@app.get("/api/route-test")
+def route_test() -> dict[str, Any]:
+    """Return the canonical route suite for the synthetic P-TEST marker."""
+    return {"grid": LAYOUT["grid"], "routes": build_route_test_cases(LAYOUT)}
 
 
 @app.get("/api/health")

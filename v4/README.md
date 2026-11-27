@@ -27,6 +27,22 @@ docker compose up --build
 Open `http://localhost:8503`. To choose another host port, set
 `PRIORIA_V4_PORT` before starting Compose.
 
+## Prueba visual de rutas
+
+Pulsa **Probar todas las rutas** para ejecutar una batería visual de 35
+itinerarios con el marcador sintético `P-TEST`. El paciente recorre los casos
+en secuencia y vuelve al origen de cada caso antes de iniciar el siguiente.
+La batería cubre ingreso caminando por admisión y PriorIA, espera, llamados a
+triage, abandono, acceso a los ocho boxes desde las salas general y C2, retorno
+desde cada box, llegada en ambulancia a ambas camas de reanimación y traslado a
+hospitalización. La grilla del plano muestra sus 66 columnas y 41 filas, con
+coordenadas rotuladas cada cinco celdas. Se puede pausar, reiniciar, recorrer
+la línea de tiempo y cambiar la velocidad.
+
+Esta batería verifica la geometría y continuidad visual de los itinerarios
+definidos en `v2/configs/layout_coordinates.json`. No ejecuta la lógica de
+decisión clínica ni genera evidencia sobre las métricas de la simulación.
+
 ## Scenario behavior
 
 - The reference cohort is fixed at 100 synthetic patients per day. The demand
@@ -40,6 +56,10 @@ Open `http://localhost:8503`. To choose another host port, set
   by time of day for stabilization.
 - Attention nurses are configurable from 1 to 3. Physician totals remain
   limited to the 8 active consultation boxes.
+- C1 patients use a fixed high-acuity pathway: they enter directly into the
+  resuscitation queue, bypass general/C2 waiting and abandonment, receive their
+  consultation in a resuscitation bed, and are then hospitalized. Their C1
+  category is assigned in the synthetic input before arrival.
 - Playback speeds are x1, x2, x5, x10, x30, and x60. A new run starts playback
   automatically, and the browser controls allow pause, resume, reset, and
   timeline scrubbing.

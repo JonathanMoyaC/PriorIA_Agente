@@ -94,6 +94,7 @@ def simulate_day(config: dict[str, Any], *, patient_profiles: list[dict[str, Any
     pretriage_waiting: dict[str, dict[str, Any]] = {}
     triage_active: list[dict[str, Any]] = []
     waiting: dict[str, dict[str, Any]] = {}
+    c1_resuscitation_queue: dict[str, dict[str, Any]] = {}
     care_active: list[dict[str, Any]] = []
     trace: list[dict[str, Any]] = []
     triage_busy_nurses = prioria_busy = human_triage_busy = 0
@@ -146,6 +147,9 @@ def simulate_day(config: dict[str, Any], *, patient_profiles: list[dict[str, Any
 
     def enter_pretriage_wait(patient_id: str, minute: int, mode: str) -> None:
         p = patients[patient_id]
+        if p["triage_category"] == "C1":
+            enter_resuscitation_queue(patient_id, minute, "c1_priority")
+            return
         area, seated = areas.arrive(
             make_waiting_patient(patient_id, minute, f"waiting_{mode}"),
             area_override="general",
@@ -162,13 +166,27 @@ def simulate_day(config: dict[str, Any], *, patient_profiles: list[dict[str, Any
             chair_index=areas.chair_index(patient_id))
         record_occupancy(minute)
 
+    def enter_resuscitation_queue(patient_id: str, minute: int,
+                                  reason: str) -> None:
+        """Keep C1 patients in the resuscitation area queue, never in waiting rooms."""
+        p = patients[patient_id]
+        p["last_room"] = "resuscitation"
+        p["current_queue_entered"] = minute
+        p["status"] = "awaiting_resuscitation"
+        c1_resuscitation_queue[patient_id] = {
+            "entered": minute, "sequence": len(trace),
+        }
+        log(minute, "entered_resuscitation_queue", patient_id,
+            area="resuscitation", reason=reason,
+            waiting_for="resuscitation_bed_and_team")
+
     def enter_clinical_wait(patient_id: str, minute: int, task: str,
                             stage: str = "initial") -> None:
         p = patients[patient_id]
         if p["triage_category"] == "C1":
-            area, seated = areas.arrive(make_waiting_patient(patient_id, minute, stage))
-        else:
-            area, seated = areas.arrive(make_waiting_patient(patient_id, minute, stage))
+            enter_resuscitation_queue(patient_id, minute, "c1_priority")
+            return
+        area, seated = areas.arrive(make_waiting_patient(patient_id, minute, stage))
         p["last_room"] = area
         p["current_queue_entered"] = minute
         p["status"] = f"waiting_{task}"
@@ -180,20 +198,24 @@ def simulate_day(config: dict[str, Any], *, patient_profiles: list[dict[str, Any
             task=task, stage=stage, seated=seated,
             chair_index=areas.chair_index(patient_id))
         record_occupancy(minute)
-        if p["triage_category"] == "C1":
-            assign_c1_nurses(minute)
-            assign_c1_doctors(minute)
-
     def assign_c1_nurses(minute: int) -> None:
-        """Send an available attention nurse to C1, using triage as last resort."""
+        """Reserve a nurse for C1 only when a resuscitation bed is available."""
         nonlocal box_nurses_free, triage_busy_nurses
         c1_queue = sorted(
-            (pid for pid, item in waiting.items()
-             if patients[pid]["triage_category"] == "C1"
-             and item["task"] == "consult" and "nurse_source" not in item),
-            key=lambda pid: (waiting[pid]["entered"], waiting[pid]["sequence"], pid),
+            (pid for pid, item in c1_resuscitation_queue.items()
+             if "nurse_source" not in item),
+            key=lambda pid: (c1_resuscitation_queue[pid]["entered"],
+                            c1_resuscitation_queue[pid]["sequence"], pid),
         )
+        reserved_slots = sum(
+            1 for item in c1_resuscitation_queue.values()
+            if "nurse_source" in item or "physician_id" in item)
         for patient_id in c1_queue:
+            item = c1_resuscitation_queue[patient_id]
+            if (reserved_slots >= resuscitation_free
+                    and "physician_id" not in item):
+                break
+            had_reserved_slot = ("nurse_source" in item or "physician_id" in item)
             if box_nurses_free > 0:
                 box_nurses_free -= 1
                 source = "attention"
@@ -202,7 +224,9 @@ def simulate_day(config: dict[str, Any], *, patient_profiles: list[dict[str, Any
                 source = "triage_fallback"
             else:
                 break
-            waiting[patient_id]["nurse_source"] = source
+            item["nurse_source"] = source
+            if not had_reserved_slot:
+                reserved_slots += 1
             patients[patient_id]["status"] = "c1_nurse_assigned_resuscitation"
             log(minute, "nurse_attended_c1", patient_id,
                 nurse_source=source, waiting_for="physician_or_resuscitation_bed")
@@ -211,18 +235,28 @@ def simulate_day(config: dict[str, Any], *, patient_profiles: list[dict[str, Any
         """Reserve the first free physician to respond to a C1 emergency."""
         nonlocal boxes_free
         c1_queue = sorted(
-            (pid for pid, item in waiting.items()
-             if patients[pid]["triage_category"] == "C1"
-             and item["task"] == "consult" and "physician_id" not in item),
-            key=lambda pid: (waiting[pid]["entered"], waiting[pid]["sequence"], pid),
+            (pid for pid, item in c1_resuscitation_queue.items()
+             if "physician_id" not in item),
+            key=lambda pid: (c1_resuscitation_queue[pid]["entered"],
+                            c1_resuscitation_queue[pid]["sequence"], pid),
         )
+        reserved_slots = sum(
+            1 for item in c1_resuscitation_queue.values()
+            if "nurse_source" in item or "physician_id" in item)
         for patient_id in c1_queue:
+            item = c1_resuscitation_queue[patient_id]
+            if (reserved_slots >= resuscitation_free
+                    and "nurse_source" not in item):
+                break
+            had_reserved_slot = ("nurse_source" in item or "physician_id" in item)
             physician = next((item for item in physicians if item["available"]), None)
             if physician is None:
                 break
             physician["available"] = False
             boxes_free -= 1
-            waiting[patient_id]["physician_id"] = physician["physician_id"]
+            c1_resuscitation_queue[patient_id]["physician_id"] = physician["physician_id"]
+            if not had_reserved_slot:
+                reserved_slots += 1
             patients[patient_id]["status"] = "c1_physician_assigned_resuscitation"
             log(minute, "physician_attended_c1", patient_id,
                 physician_id=physician["physician_id"],
@@ -334,7 +368,10 @@ def simulate_day(config: dict[str, Any], *, patient_profiles: list[dict[str, Any
             favorable=event.get("favorable"))
 
         p = patients[patient_id]
-        if task == "consult":
+        if task == "consult" and p["triage_category"] == "C1":
+            finish_patient(patient_id, minute, "hospitalized",
+                           "C1_atendido_en_reanimacion")
+        elif task == "consult":
             if rng.random() < treatment_probability(patient_id):
                 return_to_c2_wait(patient_id, minute, "treatment")
             else:
@@ -442,6 +479,47 @@ def simulate_day(config: dict[str, Any], *, patient_profiles: list[dict[str, Any
 
     def dispatch_care(minute: int) -> None:
         nonlocal boxes_free, box_nurses_free, resuscitation_free
+        emergency_order = sorted(
+            c1_resuscitation_queue,
+            key=lambda pid: (c1_resuscitation_queue[pid]["entered"],
+                            c1_resuscitation_queue[pid]["sequence"], pid),
+        )
+        for patient_id in emergency_order:
+            if resuscitation_free <= 0:
+                break
+            if patient_id not in c1_resuscitation_queue:
+                continue
+            entry = c1_resuscitation_queue[patient_id]
+            nurse_source = entry.get("nurse_source")
+            physician_id = entry.get("physician_id")
+            if nurse_source is None or physician_id is None:
+                continue
+            p = patients[patient_id]
+            physician = physician_id_by_box[physician_id]
+            c1_resuscitation_queue.pop(patient_id)
+            p["total_wait_minutes"] += max(0, minute - int(entry["entered"]))
+            p["current_queue_entered"] = None
+            p["first_consult_start"] = minute
+            p["status"] = "in_consult"
+            resuscitation_free -= 1
+            duration = _duration(
+                rng, care["consultation_minutes_by_category"]["C1"], minimum=5)
+            care_active.append({
+                "finish": minute + duration, "patient_id": patient_id,
+                "task": "consult", "resource": "resuscitation",
+                "specialty": physician["specialty"],
+                "physician_id": physician_id, "box_nurse": False,
+                "nurse_source": nurse_source, "home_box": physician["box_id"],
+            })
+            log(minute, "called_to_consult", patient_id,
+                seat_released=False, resource="resuscitation")
+            log(minute, "care_stage_started", patient_id, task="consult",
+                specialty=physician["specialty"],
+                required_specialty=p["required_specialty"],
+                physician_id=physician_id, home_box=physician["box_id"],
+                patient_moves_to="resuscitation", resource="resuscitation",
+                duration_minutes=duration, nurse_source=nurse_source)
+
         ordered = sorted(waiting, key=lambda pid: (
             int(patients[pid]["triage_category"][1]),
             waiting[pid]["entered"], waiting[pid]["sequence"], pid))
@@ -452,15 +530,9 @@ def simulate_day(config: dict[str, Any], *, patient_profiles: list[dict[str, Any
             p = patients[patient_id]
             required_specialty = p["required_specialty"]
             if task == "consult" and p["triage_category"] == "C1":
-                if resuscitation_free <= 0:
-                    continue
-                nurse_source = waiting[patient_id].get("nurse_source")
-                physician_id = waiting[patient_id].get("physician_id")
-                if nurse_source is None or physician_id is None:
-                    continue
-                physician = physician_id_by_box[physician_id]
-                resource = "resuscitation"
-            elif task in {"consult", "reevaluation"}:
+                # C1 cases are dispatched exclusively from the emergency queue.
+                continue
+            if task in {"consult", "reevaluation"}:
                 if boxes_free <= 0 or box_nurses_free <= 0:
                     continue
                 physician = next((item for item in physicians
@@ -547,8 +619,6 @@ def simulate_day(config: dict[str, Any], *, patient_profiles: list[dict[str, Any
     for minute in range(max_time + 1):
         for patient_id in arrivals.get(minute, []):
             p = patients[patient_id]
-            p["status"] = "admission_queue"
-            admission_queue.append(patient_id)
             entry = "main_door" if p["arrival_mode"] == "own_means" else p["arrival_mode"]
             log(minute, "arrived", patient_id, entry_route=entry,
                 arrival_mode=p["arrival_mode"], age_group=p["age_group"],
@@ -556,6 +626,11 @@ def simulate_day(config: dict[str, Any], *, patient_profiles: list[dict[str, Any
                 probable_diagnosis_group=p["probable_diagnosis_group"],
                 required_specialty=p["required_specialty"],
                 adoption_probability=p["prioria_adoption_probability"])
+            if p["triage_category"] == "C1":
+                enter_resuscitation_queue(patient_id, minute, "C1_directo_desde_ingreso")
+            else:
+                p["status"] = "admission_queue"
+                admission_queue.append(patient_id)
 
         finished_admission = [e for e in admission_active if e["finish"] <= minute]
         admission_active = [e for e in admission_active if e["finish"] > minute]

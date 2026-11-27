@@ -75,6 +75,7 @@ def patient_states_at_minute(layout: dict[str, Any], trace: list[dict[str, Any]]
     boxes = {item["id"]: item["coordinate"]
              for item in resources["physician_boxes"]["positions"]}
     beds = [item["coordinate"] for item in resources["resuscitation_area"]["beds"]]
+    resuscitation_entrance = resources["resuscitation_area"]["entrance"]
     general_chairs = layout["waiting_chairs"]["general"]["coordinates"]
     c2_chairs = layout["waiting_chairs"]["c2"]["coordinates"]
     return_routes = next(item for item in layout["route_definitions"]
@@ -122,6 +123,9 @@ def patient_states_at_minute(layout: dict[str, Any], trace: list[dict[str, Any]]
                 coord = triage[patient_order[patient_id] % triage_capacity]
                 zone = "triage"
             patient.update(zone=zone, coordinate=coord, waiting=False)
+        elif kind == "entered_resuscitation_queue":
+            patient.update(zone="resuscitation_queue",
+                           coordinate=resuscitation_entrance, waiting=False)
         elif kind == "entered_waiting_area":
             area = event.get("area", "general")
             if area == "resuscitation":
@@ -242,6 +246,9 @@ def _transition_waypoints(layout: dict[str, Any], start: dict[str, Any],
         return [origin, spec["start"], *spec["waypoints"], destination]
     if from_zone == "resuscitation" and to_zone == "hospitalized":
         return [origin, "BC26", "BA38"]
+    if from_zone == "ambulance" and to_zone == "resuscitation_queue":
+        route = route_defs["ambulance_parking_1_to_resuscitation"]
+        return [origin, *route["waypoints"]]
     if to_zone == "departed":
         return [origin, "AD01"]
     if from_zone == "ambulance" and to_zone == "resuscitation":
@@ -469,3 +476,94 @@ def build_period_frames(layout: dict[str, Any], trace: list[dict[str, Any]],
     return {"grid": [int(grid["columns"]), int(grid["rows"])],
             "start_minute": start_minute, "end_minute": end_minute,
             "segments": segments}
+
+
+def build_route_test_cases(layout: dict[str, Any]) -> list[dict[str, Any]]:
+    """Build a visual route suite from the authored V2 floorplan routes.
+
+    The suite reuses one synthetic marker (P-TEST) in sequence. Each case
+    starts at its own route origin and checks geometry only.
+    """
+    resources = layout["resource_locations"]
+    route_defs = {item["id"]: item for item in layout["route_definitions"]}
+    entrances = resources["own_means_access_and_exit"]["coordinates"]
+    admissions = [item["coordinate"] for item in resources["admission_desks"]["positions"]]
+    cabins = [item["coordinate"] for item in resources["prioria_cabins"]["positions"]]
+    triage = [item["coordinate"] for item in resources["triage_seats"]["positions"]]
+    beds = [item["coordinate"] for item in resources["resuscitation_area"]["beds"]]
+    general_chair = layout["waiting_chairs"]["general"]["coordinates"][0]
+    c2_chair = layout["waiting_chairs"]["c2"]["coordinates"][0]
+    cases: list[dict[str, Any]] = []
+
+    def add(name: str, category: int, path: list[str]) -> None:
+        cleaned = [point for i, point in enumerate(path) if i == 0 or point != path[i - 1]]
+        orthogonal = [cleaned[0]]
+        for destination in cleaned[1:]:
+            x0, y0 = _grid_point(orthogonal[-1])
+            x1, y1 = _grid_point(destination)
+            if x0 != x1 and y0 != y1:
+                corner_col = round(x1 + 0.5)
+                corner_row = round(y0 + 0.5)
+                orthogonal.append(f"{_column_label(corner_col)}{corner_row:02d}")
+            orthogonal.append(destination)
+        cases.append({"name": name, "category": category, "path": orthogonal})
+
+    walk = route_defs["walk_in_patient_to_admission_or_prioria"]
+    add("Ingreso caminando → admisión", 4,
+        [entrances[0], *walk["common_waypoints"],
+         walk["branches"][0]["destinations_by_resource"]["admission_1"]])
+    add("Admisión → espera general", 4,
+        [admissions[0], *route_defs["admission_to_waiting_chair"]["waypoints"], general_chair])
+    prioria_branch = next(item for item in walk["branches"] if item["id"] == "prioria")
+    add("Ingreso caminando → cabina PriorIA", 4,
+        [entrances[0], *walk["common_waypoints"], *prioria_branch["waypoints"],
+         prioria_branch["destinations_by_resource"]["cabin_1"]])
+    add("Cabina PriorIA → espera general", 4,
+        [cabins[0], *route_defs["prioria_cabin_to_waiting_chair"]["waypoints"], general_chair])
+
+    waiting = route_defs["waiting_chair_to_exit_or_triage_or_box"]
+    branches = {item["id"]: item for item in waiting["branches"]}
+    add("Espera general → abandono/salida", 4,
+        [general_chair, waiting["start"], branches["abandon"]["destination"]])
+    add("Espera general → llamado a triage", 3,
+        [general_chair, waiting["start"], *branches["triage_call"]["waypoints"],
+         branches["triage_call"]["destination"]])
+
+    for category, route_id, chair, label in [
+        (2, "triage_return_c2_to_c2_waiting", c2_chair, "C2"),
+        (3, "triage_return_c3_c4_c5_to_general_waiting", general_chair, "general"),
+    ]:
+        route = route_defs[route_id]
+        add(f"Triage → espera {label}", category,
+            [triage[0], route["start"], *route["waypoints"], chair])
+
+    for box_number in range(1, 9):
+        box_key = f"box_{box_number}"
+        branch_id = "box_call_1_to_4" if box_number <= 4 else "box_call_5_to_8"
+        branch = branches[branch_id]
+        detail = branch["destinations_by_box"][box_key]
+        add(f"Espera general → box {box_number}", 4,
+            [general_chair, waiting["start"], *branch["waypoints"],
+             *detail.get("waypoints", []), detail["door"], detail["bed"]])
+
+    c2_route = route_defs["c2_waiting_chair_to_box"]
+    for branch in c2_route["branches"]:
+        for box_key, detail in branch["destinations_by_box"].items():
+            box_number = int(box_key.split("_")[-1])
+            add(f"Espera C2 → box {box_number}", 2,
+                [c2_chair, *c2_route["common_waypoints"], *branch["waypoints"],
+                 *detail.get("waypoints", []), detail["door"], detail["bed"]])
+
+    for box_key, spec in route_defs["box_to_c2_waiting_after_attention"]["routes_by_box"].items():
+        box_number = int(box_key.split("_")[-1])
+        add(f"Box {box_number} → espera C2", 2,
+            [spec["start"], *spec["waypoints"], c2_chair])
+
+    ambulance = route_defs["ambulance_parking_1_to_resuscitation"]
+    for bed_id, destination in ambulance["destinations_by_resource"].items():
+        add(f"Ambulancia → reanimación {bed_id[-1]}", 1,
+            [ambulance["start"], *ambulance["waypoints"], destination])
+    transfer = route_defs["resuscitation_to_hospitalization"]
+    add("Reanimación → hospitalización", 1,
+        [beds[0], *transfer["waypoints"], transfer["destination"]])
+    return cases
