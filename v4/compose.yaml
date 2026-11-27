@@ -1,8 +1,0 @@
-services:
-  prioria-v4:
-    build:
-      context: ..
-      dockerfile: v4/Dockerfile
-    ports:
-      - "${PRIORIA_V4_PORT:-8503}:8503"
-    restart: unless-stopped
